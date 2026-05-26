@@ -574,6 +574,43 @@ a{color:inherit;text-decoration:none}
 .bn-badge{position:absolute;top:4px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center}
 .bn-badge.gold{background:var(--gold);color:#111}
 
+/* ── MORE POPUP MENU ── */
+.more-popup{display:none;position:fixed;bottom:80px;right:10px;z-index:500;background:var(--surface);border:1px solid var(--border2);border-radius:16px;box-shadow:var(--shadow-lg);min-width:200px;overflow:hidden;animation:fadeUp .18s ease}
+.more-popup.on{display:block}
+.more-popup-item{display:flex;align-items:center;gap:11px;padding:13px 18px;cursor:pointer;transition:.13s;color:var(--text2);font-size:13px;font-weight:500;border-bottom:1px solid var(--border)}
+.more-popup-item:last-child{border-bottom:none}
+.more-popup-item:hover{background:var(--prim-l);color:var(--primary)}
+.more-popup-item i{font-size:18px;flex-shrink:0}
+.more-popup-item.on{color:var(--primary);font-weight:700}
+.more-popup-backdrop{display:none;position:fixed;inset:0;z-index:499}
+.more-popup-backdrop.on{display:block}
+[data-theme="light"] .more-popup{background:#fff}
+
+/* ── MOBILE TABLE COMPACTION ── */
+@media(max-width:768px){
+  /* Planning: verberg Groep + Medewerker kolommen */
+  #view-planning .tbl th:nth-child(7),
+  #view-planning .tbl th:nth-child(8),
+  #view-planning .tbl td:nth-child(7),
+  #view-planning .tbl td:nth-child(8){ display:none }
+  /* Obs: verberg Geboortedatum, Groep, Laatste obs, Medewerker */
+  #view-observaties .tbl th:nth-child(2),
+  #view-observaties .tbl th:nth-child(3),
+  #view-observaties .tbl th:nth-child(4),
+  #view-observaties .tbl th:nth-child(7),
+  #view-observaties .tbl td:nth-child(2),
+  #view-observaties .tbl td:nth-child(3),
+  #view-observaties .tbl td:nth-child(4),
+  #view-observaties .tbl td:nth-child(7){ display:none }
+  /* Verwijder min-width zodat tabellen passen */
+  .tbl{ min-width:0 !important }
+  .sched{ min-width:0 !important }
+  /* Pday iets kleiner op mobile */
+  .pday{ width:22px;height:22px;font-size:10px }
+  /* Wachtlijst: verberg meta-info die overflowt */
+  .wl-tile-info p{ display:none }
+}
+
 /* ── PRINT CSS (PDF export) ── */
 @media print{
   body *{visibility:hidden}
@@ -663,9 +700,21 @@ a{color:inherit;text-decoration:none}
     <button class="bn-item" id="bn-observaties" onclick="showView('observaties');setBN('observaties')"><i class="ti ti-clipboard-check"></i><span class="bn-badge" id="bn-obs-badge" style="display:none">!</span></button>
     <button class="bn-item" id="bn-wachtlijst" onclick="showView('wachtlijst');setBN('wachtlijst')"><i class="ti ti-list-numbers"></i></button>
     <button class="bn-item" id="bn-werkrooster" onclick="showView('werkrooster');setBN('werkrooster')"><i class="ti ti-clock"></i></button>
-    <button class="bn-item" id="bn-more" onclick="toggleSb()"><i class="ti ti-dots"></i></button>
+    <button class="bn-item" id="bn-more" onclick="toggleMore()"><i class="ti ti-dots"></i></button>
   </div>
 </nav>
+
+<!-- MORE POPUP -->
+<div class="more-popup-backdrop" id="more-backdrop" onclick="closeMore()"></div>
+<div class="more-popup" id="more-popup">
+  <div class="more-popup-item" onclick="showView('medewerkers');setBN('medewerkers');closeMore()"><i class="ti ti-users"></i>Medewerkers</div>
+  <div class="more-popup-item" onclick="showView('beschikbaarheid');setBN('beschikbaarheid');closeMore()"><i class="ti ti-user-check"></i>Beschikbaarheid</div>
+  <div class="more-popup-item" onclick="showView('contacten');setBN('contacten');closeMore()"><i class="ti ti-address-book"></i>Contacten &amp; Rondleidingen</div>
+  <div class="more-popup-item admin-only" onclick="showView('bkr');setBN('bkr');closeMore()"><i class="ti ti-calculator"></i>BKR Calculator</div>
+  <div class="more-popup-item admin-only" onclick="showView('toewijzen');setBN('toewijzen');closeMore()"><i class="ti ti-arrows-exchange"></i>Kind toewijzen</div>
+  <div class="more-popup-item admin-only" onclick="showView('instellingen');setBN('instellingen');closeMore()"><i class="ti ti-settings"></i>Instellingen</div>
+  <div class="more-popup-item" style="color:var(--red)" onclick="doLogout();closeMore()"><i class="ti ti-logout"></i>Uitloggen</div>
+</div>
 <div id="app">
   <!-- SIDEBAR -->
   <nav class="sidebar" id="sidebar">
@@ -778,7 +827,7 @@ a{color:inherit;text-decoration:none}
       <!-- ═══ WERKROOSTER ═══ -->
       <div class="view" id="view-werkrooster">
         <div class="page-banner"><img src="https://images.unsplash.com/photo-1510125750144-795c2b0737ba?q=80&w=800&auto=format&fit=crop" alt=""><div class="page-banner-overlay"><div class="page-banner-text"><h1><i class="ti ti-clock"></i> Werkrooster</h1><p>Diensten, uren en verlofaanvragen</p></div></div></div>
-        <div class="ph"><div></div><div class="ph-actions"><button class="btn btn-outline btn-sm" onclick="exportRoosterPDF()"><i class="ti ti-file-type-pdf"></i>PDF exporteren</button><button class="btn btn-outline btn-sm admin-only" onclick="autoSchedule()"><i class="ti ti-wand"></i>Auto-plannen</button><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-shift')"><i class="ti ti-plus"></i>Dienst toevoegen</button></div></div>
+        <div class="ph"><div></div><div class="ph-actions"><button class="btn btn-outline btn-sm admin-only" onclick="exportRoosterPDF()"><i class="ti ti-file-type-pdf"></i>PDF exporteren</button><button class="btn btn-outline btn-sm admin-only" onclick="autoSchedule()"><i class="ti ti-wand"></i>Auto-plannen</button><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-shift')"><i class="ti ti-plus"></i>Dienst toevoegen</button></div></div>
         <div class="tabs"><button class="tab on" onclick="showTab('rooster')">Weekrooster</button><button class="tab" onclick="showTab('uren')">Urenregistratie</button><button class="tab" onclick="showTab('verlof')">Verlofaanvragen <span id="leave-tab-cnt" style="display:none;background:var(--red);color:#fff;border-radius:9px;padding:0 5px;font-size:9px">0</span></button></div>
         <div id="tab-rooster"><div class="wk-nav"><button onclick="prevWeek()"><i class="ti ti-chevron-left"></i></button><span id="rooster-wk-label">laden...</span><button onclick="nextWeek()"><i class="ti ti-chevron-right"></i></button></div><div id="print-area"><div id="print-header"><h2>KinderKompas — Werkrooster</h2><p id="print-week-label"></p></div><div class="sched-wrap" id="sched-container"></div></div></div>
         <div id="tab-uren" style="display:none"><div id="uren-content"><div class="loader"><i class="ti ti-loader"></i></div></div></div>
@@ -1192,6 +1241,7 @@ function showView(id) {
   });
   document.getElementById('topbar-title').textContent = viewTitles[id] || id;
   closeSb();
+  closeMore();
   hideSR();
   // Update bottom nav active state
   const bnIds=['dashboard','planning','observaties','werkrooster','wachtlijst','medewerkers','beschikbaarheid','contacten','bkr','toewijzen','instellingen'];
@@ -1230,14 +1280,39 @@ async function loadDashboard() {
       <div class="sc v-violet"><div class="sc-glow"></div><div class="sc-icon"><i class="ti ti-clipboard-check"></i></div><div class="sc-num">${d.obs_overdue+d.obs_needed}</div><div class="sc-lbl">Observaties aandacht</div><div class="sc-sub" style="color:var(--violet)">${d.obs_done} afgerond</div></div>`;
 
     // Wachtlijst tile
+    const wlPct = d.wl_total > 0 ? Math.round((d.wl_total - d.wl_proposals) / d.wl_total * 100) : 0;
     document.getElementById('dash-wl').innerHTML = `
-      <div style="display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap">
-        <div><div style="font-family:'Plus Jakarta Sans';font-size:26px;font-weight:800;color:var(--primary)">${d.wl_total}</div><div style="font-size:10px;color:var(--text3)">Wachtend</div></div>
-        <div><div style="font-family:'Plus Jakarta Sans';font-size:26px;font-weight:800;color:var(--gold)">${d.wl_proposals}</div><div style="font-size:10px;color:var(--text3)">Voorstel verstuurd</div></div>
-        <div><div style="font-family:'Plus Jakarta Sans';font-size:26px;font-weight:800;color:var(--blue)">${d.tours_upcoming}</div><div style="font-size:10px;color:var(--text3)">Rondleidingen gepland</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--prim-l);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(99,102,241,.2)">
+          <i class="ti ti-users" style="font-size:20px;color:var(--primary);display:block;margin-bottom:5px"></i>
+          <div style="font-family:'Plus Jakarta Sans';font-size:24px;font-weight:800;color:var(--primary);line-height:1">${d.wl_total}</div>
+          <div style="font-size:9px;font-weight:700;color:var(--primary);margin-top:3px;text-transform:uppercase;letter-spacing:.3px">Wachtend</div>
+        </div>
+        <div style="background:var(--gold-l);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(250,204,21,.25)">
+          <i class="ti ti-send" style="font-size:20px;color:var(--gold);display:block;margin-bottom:5px"></i>
+          <div style="font-family:'Plus Jakarta Sans';font-size:24px;font-weight:800;color:var(--gold);line-height:1">${d.wl_proposals}</div>
+          <div style="font-size:9px;font-weight:700;color:var(--gold);margin-top:3px;text-transform:uppercase;letter-spacing:.3px">Voorstellen</div>
+        </div>
+        <div style="background:var(--blue-l);border-radius:12px;padding:12px;text-align:center;border:1px solid rgba(29,155,240,.2)">
+          <i class="ti ti-calendar-event" style="font-size:20px;color:var(--blue);display:block;margin-bottom:5px"></i>
+          <div style="font-family:'Plus Jakarta Sans';font-size:24px;font-weight:800;color:var(--blue);line-height:1">${d.tours_upcoming}</div>
+          <div style="font-size:9px;font-weight:700;color:var(--blue);margin-top:3px;text-transform:uppercase;letter-spacing:.3px">Rondleidingen</div>
+        </div>
       </div>
-      <div class="pgbar" style="margin-bottom:4px"><div class="pgbar-fill" style="width:${d.wl_total>0?Math.round(d.wl_proposals/d.wl_total*100):0}%;background:var(--gold)"></div></div>
-      <div style="font-size:10px;color:var(--text3)">${d.wl_proposals} van ${d.wl_total} in behandeling</div>`;
+      <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;font-weight:600;color:var(--text3)">Voortgang plaatsingen</span>
+        <span style="font-size:11px;font-weight:700;color:var(--primary)">${d.wl_proposals} van ${d.wl_total}</span>
+      </div>
+      <div style="height:8px;background:var(--prim-gl);border-radius:6px;overflow:hidden;margin-bottom:12px">
+        <div style="height:100%;background:linear-gradient(90deg,var(--primary),var(--violet));border-radius:6px;width:${d.wl_total>0?Math.round(d.wl_proposals/d.wl_total*100):0}%;transition:width .8s"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--prim-gl);border-radius:10px;border:1px solid rgba(99,102,241,.15)">
+        <div style="display:flex;align-items:center;gap:7px">
+          <i class="ti ti-clock-hour-4" style="color:var(--primary);font-size:15px"></i>
+          <span style="font-size:11px;font-weight:600">${d.wl_total - d.wl_proposals} nog in afwachting</span>
+        </div>
+        <span style="font-size:10px;font-weight:700;color:var(--primary);background:var(--prim-l);padding:3px 9px;border-radius:20px">${wlPct}% wachtend</span>
+      </div>`;
 
     // Observations
     document.getElementById('dash-obs').innerHTML = `
@@ -1423,7 +1498,21 @@ async function saveObs() {
 async function loadStaff() {
   try {
     const d = await api('GET','/staff'); if(!d) return; staffList=d;
-    ['nc-leid','shift-user'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=staffList.filter(s=>s.active).map(s=>`<option value="${s.id}">${s.name}</option>`).join('')});
+    // nc-leid: altijd alle medewerkers
+    const ncLeid = document.getElementById('nc-leid');
+    if(ncLeid) ncLeid.innerHTML = staffList.filter(s=>s.active).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    // shift-user: admin ziet iedereen, medewerker ziet alleen zichzelf
+    const shiftUser = document.getElementById('shift-user');
+    if(shiftUser){
+      if(currentUser && currentUser.role === 'admin'){
+        shiftUser.innerHTML = staffList.filter(s=>s.active).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+      } else if(currentUser){
+        const me = staffList.find(s=>s.id===currentUser.id);
+        shiftUser.innerHTML = me ? `<option value="${me.id}" selected>${me.name}</option>` : '';
+        shiftUser.disabled = true;
+        shiftUser.style.opacity = '.6';
+      }
+    }
     const tg=document.getElementById('tour-guide'); if(tg) tg.innerHTML=staffList.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   } catch(e){}
 }
@@ -1503,11 +1592,35 @@ async function loadRooster() {
     const container=document.getElementById('sched-container'); if(!container) return;
     const workers = staff.filter(s=>s.active && (currentUser.role==='admin'||s.id===currentUser.id));
     let html=`<div class="sched"><div class="sched-grid"><div class="sched-hdr">Medewerker</div>${dates.map((d,i)=>`<div class="sched-hdr">${DS[i]} ${d.getDate()}/${d.getMonth()+1}</div>`).join('')}`;
-    workers.forEach(s=>{
-      html+=`<div class="sched-name"><div style="width:22px;height:22px;border-radius:50%;background:${s.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${s.initials}</div>${s.name.split(' ')[0]}</div>`;
-      dates.forEach(d=>{const ds=d.toISOString().split('T')[0];const dayShifts=shifts.filter(sh=>sh.user_id===s.id&&sh.shift_date===ds);html+=`<div class="sched-cell">${dayShifts.map(sh=>`<div class="shift shift-${sh.shift_type}">${sh.start_time||''}${sh.end_time?'–'+sh.end_time:''}</div>`).join('')}</div>`;});
-    });
-    html+='</div></div>'; container.innerHTML=html;
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // Mobile: per-dag lijst
+      let mhtml = '<div class="sched" style="min-width:0">';
+      dates.forEach((d,di) => {
+        const ds = d.toISOString().split('T')[0];
+        const dayShifts = shifts.filter(sh => sh.shift_date === ds);
+        if (!dayShifts.length) return;
+        mhtml += `<div style="border-bottom:1px solid var(--border);padding:10px 14px">
+          <div style="font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${DAYS[di]} ${d.getDate()}/${d.getMonth()+1}</div>
+          <div style="display:flex;flex-direction:column;gap:5px">`;
+        dayShifts.forEach(sh => {
+          mhtml += `<div style="display:flex;align-items:center;gap:9px">
+            <div style="width:26px;height:26px;border-radius:50%;background:${sh.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${sh.initials}</div>
+            <span style="font-size:12px;font-weight:600;flex:1">${sh.user_name.split(' ')[0]}</span>
+            <span class="shift shift-${sh.shift_type}" style="margin:0">${sh.start_time||''}${sh.end_time?'–'+sh.end_time:''}</span>
+          </div>`;
+        });
+        mhtml += '</div></div>';
+      });
+      mhtml += '</div>';
+      container.innerHTML = mhtml;
+    } else {
+      workers.forEach(s=>{
+        html+=`<div class="sched-name"><div style="width:22px;height:22px;border-radius:50%;background:${s.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${s.initials}</div>${s.name.split(' ')[0]}</div>`;
+        dates.forEach(d=>{const ds=d.toISOString().split('T')[0];const dayShifts=shifts.filter(sh=>sh.user_id===s.id&&sh.shift_date===ds);html+=`<div class="sched-cell">${dayShifts.map(sh=>`<div class="shift shift-${sh.shift_type}">${sh.start_time||''}${sh.end_time?'–'+sh.end_time:''}</div>`).join('')}</div>`;});
+      });
+      html+='</div></div>'; container.innerHTML=html;
+    }
   } catch(e) { console.error(e); }
 }
 async function loadUren() {
@@ -1853,6 +1966,25 @@ function openModal(id){document.getElementById(id).classList.add('on');}
 function closeModal(id){document.getElementById(id).classList.remove('on');}
 function toggleSb(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('on');}
 function closeSb(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('on');}
+function toggleMore(){
+  const popup=document.getElementById('more-popup');
+  const backdrop=document.getElementById('more-backdrop');
+  const isOpen=popup.classList.contains('on');
+  if(isOpen){closeMore();}else{
+    popup.classList.add('on');backdrop.classList.add('on');
+    // Markeer actieve item
+    const cur=document.querySelector('.nav-item.on');
+    const curView=cur?cur.getAttribute('onclick')?.match(/'(\w+)'/)?.[1]:'';
+    popup.querySelectorAll('.more-popup-item').forEach(el=>{
+      const onclick=el.getAttribute('onclick')||'';
+      el.classList.toggle('on',onclick.includes("'"+curView+"'"));
+    });
+  }
+}
+function closeMore(){
+  document.getElementById('more-popup')?.classList.remove('on');
+  document.getElementById('more-backdrop')?.classList.remove('on');
+}
 function toggleNotif(){/* no-op */}
 function toggleTheme(){
   const html=document.documentElement;
@@ -1898,6 +2030,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if(icon){icon.className=savedTheme==='dark'?'ti ti-sun':'ti ti-moon';}
   initPhotos();
   calcBKR();
+  window.addEventListener('resize', () => {
+    if (document.getElementById('view-werkrooster').classList.contains('on')) loadRooster();
+  });
 
   // Drag-drop upload
   const zone = document.getElementById('obs-drop');
