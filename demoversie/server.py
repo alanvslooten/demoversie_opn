@@ -215,134 +215,300 @@ def init_db():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP);
     ''')
 
-    if cur.execute("SELECT value FROM db_meta WHERE key='seeded_v2'").fetchone():
+    if cur.execute("SELECT value FROM db_meta WHERE key='seeded_v3'").fetchone():
         c.close(); print('✓ Database ready'); return
 
+    import random; random.seed(42)
     def hp(pw): return hashlib.sha256(f'{pw}{SECRET}'.encode()).hexdigest()
     today = date.today()
     def rdate(days): return (today + timedelta(days=days)).isoformat()
-
-    # Users
-    for u in [
-        ('Beheerder','beheerder@kdv.nl',hp('admin123'),'admin','BH','#6366f1',40,200,0,0),
-        ('Lisa de Bruin','lisa@kdv.nl',hp('leidster1'),'staff','LB','#8b5cf6',32,160,24,88),
-        ('Sarah Jansen','sarah@kdv.nl',hp('leidster2'),'staff','SJ','#1d9bf0',28,140,16,74),
-        ('Mieke van Dijk','mieke@kdv.nl',hp('leidster3'),'staff','MV','#f472b6',36,180,40,96),
-        ('Tom Hartman','tom@kdv.nl',hp('stagair1'),'staff','TH','#4ade80',16,0,0,42),
-    ]:
-        cur.execute('INSERT OR IGNORE INTO users(name,email,password_hash,role,initials,color,contract_hours,vacation_hours_total,vacation_hours_used,worked_hours_month)VALUES(?,?,?,?,?,?,?,?,?,?)',u)
-
-    lid=cur.execute("SELECT id FROM users WHERE email='lisa@kdv.nl'").fetchone()[0]
-    sid=cur.execute("SELECT id FROM users WHERE email='sarah@kdv.nl'").fetchone()[0]
-    mid=cur.execute("SELECT id FROM users WHERE email='mieke@kdv.nl'").fetchone()[0]
-    tid=cur.execute("SELECT id FROM users WHERE email='tom@kdv.nl'").fetchone()[0]
-
-    # Children
     def dob(m): return (today - timedelta(days=int(m*30.4))).isoformat()
-    kids = [
-        ('Emma de Jong',dob(14),'Babygroep','#22c55e',lid,'[1,0,1,0,1]','Maria de Jong','06-12345678'),
-        ('Liam Bakker',dob(32),'Dreumesgroep','#8b5cf6',sid,'[1,1,0,1,0]','Jan Bakker','06-23456789'),
-        ('Sophie van den Berg',dob(40),'Dreumesgroep','#8b5cf6',lid,'[0,1,1,1,0]','Karin v.d. Berg','06-34567890'),
-        ('Noah Smit',dob(42),'Peutergroep','#1d9bf0',mid,'[1,0,0,1,1]','Peter Smit','06-45678901'),
-        ('Olivia Visser',dob(47),'Peutergroep','#1d9bf0',sid,'[1,1,1,0,0]','Anne Visser','06-56789012'),
-        ('Lucas de Boer',dob(16),'Babygroep','#22c55e',mid,'[0,1,0,1,1]','Rob de Boer','06-67890123'),
-        ('Mia Janssen',dob(25),'Dreumesgroep','#8b5cf6',lid,'[1,0,1,0,1]','Els Janssen','06-78901234'),
-        ('Finn de Wit',dob(43),'Peutergroep','#1d9bf0',mid,'[0,0,1,1,1]','Mark de Wit','06-89012345'),
-        ('Zoë Mulder',dob(11),'Babygroep','#22c55e',sid,'[1,1,0,0,0]','Linda Mulder','06-90123456'),
-        ('Lars Hendriks',dob(39),'Dreumesgroep','#8b5cf6',lid,'[1,0,0,1,1]','Daan Hendriks','06-01234567'),
-        ('Noor Pietersen',dob(41),'Peutergroep','#1d9bf0',mid,'[0,1,1,0,1]','Lies Pietersen','06-11223344'),
-        ('Sam de Graaf',dob(13),'Babygroep','#22c55e',sid,'[1,1,1,0,0]','Tom de Graaf','06-22334455'),
+
+    # ── KLEUREN PALETTE ──
+    COLORS = ['#6366f1','#8b5cf6','#1d9bf0','#22c55e','#f472b6','#ef4444','#facc15','#14b8a6','#f97316','#06b6d4','#a855f7','#84cc16']
+
+    # ── 12 MEDEWERKERS (1 admin + 11 staff) ──
+    staff_data = [
+        ('Beheerder',      'beheerder@kdv.nl', 'admin123','admin', 40,200, 0,   0),
+        ('Lisa de Bruin',  'lisa@kdv.nl',       'leidster1','staff',32,160,24,  88),
+        ('Sarah Jansen',   'sarah@kdv.nl',      'leidster2','staff',28,140,16,  74),
+        ('Mieke van Dijk', 'mieke@kdv.nl',      'leidster3','staff',36,180,40,  96),
+        ('Tom Hartman',    'tom@kdv.nl',        'stagair1', 'staff',16,  0, 0,  42),
+        ('Anna Vermeer',   'anna@kdv.nl',       'welkom123','staff',32,160,32,  86),
+        ('Kim Bosman',     'kim@kdv.nl',        'welkom123','staff',28,140, 8,  72),
+        ('Petra Willems',  'petra@kdv.nl',      'welkom123','staff',36,180,56, 100),
+        ('Joris van Dam',  'joris@kdv.nl',      'welkom123','staff',32,160,16,  84),
+        ('Lena Hendriks',  'lena@kdv.nl',       'welkom123','staff',24,120, 8,  60),
+        ('Sophie de Groot','sophie@kdv.nl',     'welkom123','staff',36,180,48,  95),
+        ('Erik Claassen',  'erik@kdv.nl',       'welkom123','staff',32,160,24,  88),
     ]
-    for ch in kids:
-        cur.execute('INSERT INTO children(name,dob,group_name,group_color,assigned_leidster_id,days,contact_name,contact_phone)VALUES(?,?,?,?,?,?,?,?)',ch)
+    for i,(name,email,pw,role,hrs,vac_tot,vac_used,worked) in enumerate(staff_data):
+        col = COLORS[i % len(COLORS)]
+        inits = ''.join(w[0].upper() for w in name.split()[:2])
+        cur.execute("""INSERT OR IGNORE INTO users
+            (name,email,password_hash,role,initials,color,contract_hours,
+             vacation_hours_total,vacation_hours_used,worked_hours_month)
+            VALUES(?,?,?,?,?,?,?,?,?,?)""",
+            (name,email,hp(pw),role,inits,col,hrs,vac_tot,vac_used,worked))
 
-    def cid(name): return cur.execute('SELECT id FROM children WHERE name=?',(name,)).fetchone()[0]
-    eid=cid('Emma de Jong'); bid=cid('Liam Bakker'); nid=cid('Noah Smit')
-    oid=cid('Olivia Visser'); mid2=cid('Mia Janssen'); fid=cid('Finn de Wit')
+    # Haal staff IDs op
+    staff_ids = {}
+    for name,email,*_ in staff_data:
+        row = cur.execute('SELECT id FROM users WHERE email=?',(email,)).fetchone()
+        if row: staff_ids[email] = row[0]
+    # Staff medewerkers (geen admin)
+    medewerkers = [staff_ids[e] for _,e,*_ in staff_data if _[1]=='staff']  # alle non-admin
+    medewerkers = [v for k,v in staff_ids.items() if k != 'beheerder@kdv.nl']
 
-    obs_notes='Ontwikkeling verloopt goed. Motoriek en taalontwikkeling worden nauwkeurig gevolgd. Kind toont positieve sociale interactie met leidsters en groepsgenoten. Specifieke observatiemomenten bevestigen leeftijdsadequate ontwikkeling op alle domeinen.'
-    for child_id,leid_id,od,nd in [
-        (eid,lid,rdate(-60),rdate(123)),(bid,sid,rdate(-200),rdate(-17)),
-        (nid,mid,rdate(-90),rdate(93)),(oid,sid,rdate(-150),rdate(33)),
-        (mid2,lid,rdate(-210),rdate(-27)),(fid,mid,rdate(-45),rdate(138)),
-    ]:
-        cur.execute('INSERT INTO observations(child_id,leidster_id,obs_date,next_due,notes,completed)VALUES(?,?,?,?,?,1)',(child_id,leid_id,od,nd,obs_notes))
+    # ── 60 GEZINNEN → 80 KINDEREN ──
+    # 20 gezinnen met 2 kinderen, 40 gezinnen met 1 kind
+    voornamen_m = ['Liam','Noah','Lucas','Finn','Lars','Sam','Tom','Daan','Ruben','Cas',
+                   'Tim','Jens','Luuk','Thijs','Wolf','Bo','Milan','Koen','Abel','Stef',
+                   'Rik','Axel','Bas','Job','Felix','Hugo','Joren','Niels','Coen','Sander',
+                   'Roy','Niek','Mart','Max','Bram','Pieter','Jasper','Sven','Vic','Raf']
+    voornamen_v = ['Emma','Sophie','Olivia','Mia','Zoë','Noor','Julia','Anna','Eva','Fleur',
+                   'Lisa','Femke','Lena','Nina','Amy','Sara','Fien','Vera','Iris','Hanna',
+                   'Roos','Ines','Lotte','Jade','Nora','Tess','Wren','Lore','Maud','Elise',
+                   'Lies','Amber','Faye','Silke','Lina','Hilde','Floor','Roos','Eline','Sofie']
+    achternamen = ['de Jong','Bakker','van den Berg','Smit','Visser','de Boer','Janssen',
+                   'de Wit','Mulder','Hendriks','Pietersen','de Graaf','Vermeer','van Dam',
+                   'Willems','Claassen','de Vries','Jansen','Peeters','Hoekstra','Brouwer',
+                   'Dekker','Jacobs','van Leeuwen','de Ruiter','Bosman','van Dijk','Meijer',
+                   'Linden','Scholten','Huisman','Bos','Wolters','Hartman','van Eck',
+                   'de Haan','Kuijpers','Martens','Bergman','Vos','van Zee','Steenbeek',
+                   'Nijs','Heijnen','van der Molen','Hoeven','Gerritsen','van Beek','de Graaf']
+    ouder_vnamen = ['Maria','Jan','Karin','Peter','Anne','Rob','Els','Mark','Linda','Daan',
+                    'Lies','Tom','Sandra','Henk','Yvonne','Frank','Margriet','Pieter','Loes',
+                    'Bart','Tineke','Gerard','Hanneke','Paul','Simone','Eric','Ingrid','Marco',
+                    'Nathalie','René','Wendy','Stefan','Monique','Dennis','Carolien','Patrick',
+                    'Jessica','Werner','Anita','Lars','Corinne','Mike','Laura','Kevin','Marloes',
+                    'Arjan','Bianca','Sjoerd','Mirjam','Dirk','Ellen','Remco','Hanneke','Piet',
+                    'Cynthia','Wouter','Rianne','Ronald','Nicole','Edwin']
+    tel_prefix = ['06-1','06-2','06-3','06-4','06-5','06-6','06-7','06-8','06-9']
 
-    # Shifts current week
+    def rand_tel(i):
+        return f'06-{(10000000+i*7919)%90000000+10000000}'
+
+    def rand_days():
+        opts = [[1,1,0,1,0],[1,0,1,0,1],[0,1,1,1,0],[1,1,1,0,0],[0,0,1,1,1],
+                [1,0,1,1,0],[1,1,0,0,1],[0,1,0,1,1],[1,0,0,1,1],[1,1,1,1,0]]
+        return json.dumps(opts[random.randint(0,len(opts)-1)])
+
+    # Groepen en kleuren
+    GROEPEN = [
+        ('Babygroep',    '#22c55e',  3, 11),   # (naam, kleur, min_mnd, max_mnd)
+        ('Dreumesgroep', '#8b5cf6',  12, 23),
+        ('Peutergroep',  '#1d9bf0',  24, 47),
+        ('BSO',          '#f97316',  48, 144),
+    ]
+    # Verdeling: 18 baby, 22 dreumes, 25 peuter, 15 bso = 80
+    groep_counts = {'Babygroep':18,'Dreumesgroep':22,'Peutergroep':25,'BSO':15}
+
+    # Genereer 60 gezinnen
+    families = []
+    used_surnames = []
+    for i in range(60):
+        sn = achternamen[i % len(achternamen)]
+        on = ouder_vnamen[i % len(ouder_vnamen)]
+        email = f'{on.lower().replace(" ","")}.{sn.lower().replace(" ","").replace("de ","").replace("van ","").replace("den ","")}@email.nl'
+        families.append({'surname':sn,'ouder':on,'email':email,'tel':rand_tel(i),'adres':f'Straat {i+1}, Roosendaal','has_second':i<20})
+
+    # Maak kinderen aan
+    child_pool = []
+    used_names = set()
+    groep_list = []
+    for g,col,mn,mx in GROEPEN:
+        for _ in range(groep_counts[g]):
+            groep_list.append((g,col,mn,mx))
+    random.shuffle(groep_list)
+
+    kind_idx = 0
+    for fi, fam in enumerate(families):
+        n_kids = 2 if fam['has_second'] else 1
+        for ki in range(n_kids):
+            if kind_idx >= 80: break
+            g,col,mn,mx = groep_list[kind_idx]
+            # Kies voornaam (wissel m/v)
+            is_v = (kind_idx + ki) % 2 == 0
+            vn_pool = voornamen_v if is_v else voornamen_m
+            vn = vn_pool[kind_idx % len(vn_pool)]
+            name = f'{vn} {fam["surname"]}'
+            # Maak uniek
+            if name in used_names:
+                vn = vn_pool[(kind_idx+7) % len(vn_pool)]
+                name = f'{vn} {fam["surname"]}'
+            used_names.add(name)
+            age_mnd = random.randint(mn, mx)
+            assigned = medewerkers[kind_idx % len(medewerkers)]
+            child_pool.append({
+                'name': name, 'dob': dob(age_mnd), 'group': g, 'color': col,
+                'leidster': assigned, 'days': rand_days(),
+                'contact': f'{fam["ouder"]} {fam["surname"]}', 'tel': fam['tel'],
+                'email': fam['email'], 'fi': fi,
+            })
+            kind_idx += 1
+        if kind_idx >= 80: break
+
+    for ch in child_pool:
+        cur.execute("""INSERT INTO children
+            (name,dob,group_name,group_color,assigned_leidster_id,days,contact_name,contact_phone)
+            VALUES(?,?,?,?,?,?,?,?)""",
+            (ch['name'],ch['dob'],ch['group'],ch['color'],ch['leidster'],ch['days'],ch['contact'],ch['tel']))
+
+    # ── OBSERVATIES (voor alle 80 kinderen) ──
+    all_kids = cur.execute('SELECT id,assigned_leidster_id FROM children WHERE active=1').fetchall()
+    obs_templates = [
+        'Ontwikkeling verloopt goed. Motoriek en taalontwikkeling zijn leeftijdsadequaat. Kind toont positieve gehechtheid aan vaste leidsters en zoekt contact met groepsgenoten. Eetpatroon is stabiel.',
+        'Kind toont nieuwsgierige, onderzoekende houding. Fijne motoriek ontwikkelt zich goed zichtbaar. Sociale interactie met leeftijdgenoten neemt toe. Aandachtspunten voor komende periode worden nauwlettend gevolgd.',
+        'Taalontwikkeling is sterk aanwezig — kind praat in zinnen en heeft rijke woordenschat voor de leeftijd. Concentratieboog bij gerichte activiteiten verbetert zichtbaar. Groepsintegratie verloopt soepel.',
+        'Motorische mijlpalen worden bereikt. Kind is zelfstandiger in dagelijkse handelingen zoals aankleden en eten. Emotieregulatie wordt beter; kind kan beter omgaan met overgangen en teleurstellingen.',
+        'Creatieve ontwikkeling valt op: kind tekent graag en toont interesse in muziek. Samenspel met andere kinderen verloopt goed met af en toe begeleiding nodig bij conflictoplossing. Positieve algehele indruk.',
+    ]
+    for i,(kid_id, leid_id) in enumerate(all_kids):
+        # Sommige kinderen hebben recente obs, andere overschreden
+        if i % 5 == 0:   od, nd = rdate(-200), rdate(-17)   # overdue
+        elif i % 7 == 0: od, nd = rdate(-150), rdate(33)    # needed soon
+        elif i % 3 == 0: od, nd = rdate(-90),  rdate(93)    # done ok
+        else:            od, nd = rdate(-60),   rdate(123)   # done fine
+        notes = obs_templates[i % len(obs_templates)]
+        cur.execute('INSERT INTO observations(child_id,leidster_id,obs_date,next_due,notes,completed)VALUES(?,?,?,?,?,1)',
+                    (kid_id, leid_id or medewerkers[0], od, nd, notes))
+
+    # ── DIENSTEN HUIDIGE WEEK ──
     monday = today - timedelta(days=today.weekday())
-    for uid,day,st,et in [
-        (lid,0,'07:30','16:00'),(lid,1,'07:30','16:00'),(lid,3,'07:30','14:00'),(lid,4,'07:30','16:00'),
-        (sid,0,'09:00','18:30'),(sid,2,'09:00','18:30'),(sid,3,'09:00','18:30'),
-        (mid,1,'08:00','17:00'),(mid,2,'08:00','17:00'),(mid,4,'08:00','17:00'),
-        (tid,0,'09:00','13:00'),(tid,2,'09:00','13:00'),
-    ]:
-        cur.execute('INSERT INTO shifts(user_id,shift_date,shift_type,start_time,end_time)VALUES(?,?,?,?,?)',
-                    (uid,(monday+timedelta(days=day)).isoformat(),'werk',st,et))
+    shift_patterns = [
+        # (dag, start, eind)
+        (0,'07:30','16:00'),(1,'07:30','16:00'),(3,'07:30','14:00'),(4,'07:30','16:00'),  # Lisa
+        (0,'09:00','18:30'),(2,'09:00','18:30'),(3,'09:00','18:30'),                      # Sarah
+        (1,'08:00','17:00'),(2,'08:00','17:00'),(4,'08:00','17:00'),                      # Mieke
+        (0,'09:00','13:00'),(2,'09:00','13:00'),                                           # Tom
+        (0,'07:30','16:00'),(1,'07:30','16:00'),(2,'07:30','16:00'),                      # Anna
+        (1,'09:00','18:30'),(3,'09:00','18:30'),(4,'09:00','18:30'),                      # Kim
+        (0,'08:00','17:00'),(1,'08:00','17:00'),(4,'08:00','17:00'),                      # Petra
+        (2,'07:30','16:00'),(3,'07:30','16:00'),(4,'07:30','16:00'),                      # Joris
+        (0,'09:00','13:00'),(1,'09:00','13:00'),(3,'09:00','13:00'),                      # Lena
+        (0,'07:30','16:00'),(2,'07:30','16:00'),(4,'07:30','16:00'),                      # Sophie
+        (1,'08:00','17:00'),(2,'08:00','17:00'),(3,'08:00','17:00'),                      # Erik
+    ]
+    pattern_per_staff = [4,3,3,2,3,3,3,3,3,3,3]
+    idx = 0
+    for si, uid in enumerate(medewerkers):
+        n = pattern_per_staff[si] if si < len(pattern_per_staff) else 3
+        for dag,st,et in shift_patterns[idx:idx+n]:
+            sd = (monday + timedelta(days=dag)).isoformat()
+            cur.execute('INSERT INTO shifts(user_id,shift_date,shift_type,start_time,end_time)VALUES(?,?,?,?,?)',
+                        (uid, sd, 'werk', st, et))
+        idx += n
 
-    # Leave requests
-    cur.execute('INSERT INTO leave_requests(user_id,leave_type,from_date,to_date,days,notes)VALUES(?,?,?,?,?,?)',
-                (sid,'vakantie',rdate(25),rdate(29),3,'Zomervakantie'))
-    cur.execute('INSERT INTO leave_requests(user_id,leave_type,from_date,to_date,days,notes)VALUES(?,?,?,?,?,?)',
-                (lid,'verlof',rdate(60),rdate(60),1,'Arts afspraak'))
+    # ── VERLOFAANVRAGEN ──
+    leave_data = [
+        (staff_ids['sarah@kdv.nl'], 'vakantie', rdate(18), rdate(22), 3, 'Vakantie'),
+        (staff_ids['lisa@kdv.nl'],  'verlof',   rdate(45), rdate(45), 1, 'Arts afspraak'),
+        (staff_ids['kim@kdv.nl'],   'vakantie', rdate(60), rdate(69), 8, 'Buitenlandse vakantie'),
+        (staff_ids['joris@kdv.nl'], 'verlof',   rdate(7),  rdate(7),  1, 'Familieomstandigheden'),
+    ]
+    for u,lt,fd,td,d,n in leave_data:
+        cur.execute('INSERT INTO leave_requests(user_id,leave_type,from_date,to_date,days,notes)VALUES(?,?,?,?,?,?)',(u,lt,fd,td,d,n))
 
-    # Weekly availability (weeks 23-40 current year)
+    # ── BESCHIKBAARHEID WEKEN 20-45 ──
     yr = today.year
-    avail = [
-        (lid,0,'ochtend'),(lid,0,'middag'),(lid,1,'ochtend'),(lid,3,'ochtend'),(lid,3,'middag'),(lid,4,'ochtend'),(lid,4,'middag'),
-        (sid,0,'middag'),(sid,1,'ochtend'),(sid,1,'middag'),(sid,2,'middag'),(sid,3,'ochtend'),
-        (mid,1,'ochtend'),(mid,1,'middag'),(mid,2,'ochtend'),(mid,2,'middag'),(mid,4,'ochtend'),(mid,4,'middag'),
-    ]
-    for wk in range(23, 41):
-        for uid,dow,sess in avail:
-            cur.execute('INSERT OR IGNORE INTO weekly_availability(user_id,week_number,year,day_of_week,session)VALUES(?,?,?,?,?)',(uid,wk,yr,dow,sess))
+    av_patterns = {
+        staff_ids['lisa@kdv.nl']:  [(0,'ochtend'),(0,'middag'),(1,'ochtend'),(3,'ochtend'),(3,'middag'),(4,'ochtend'),(4,'middag')],
+        staff_ids['sarah@kdv.nl']: [(0,'middag'),(1,'ochtend'),(1,'middag'),(2,'middag'),(3,'ochtend')],
+        staff_ids['mieke@kdv.nl']: [(1,'ochtend'),(1,'middag'),(2,'ochtend'),(2,'middag'),(4,'ochtend'),(4,'middag')],
+        staff_ids['anna@kdv.nl']:  [(0,'ochtend'),(1,'ochtend'),(2,'ochtend'),(2,'middag')],
+        staff_ids['kim@kdv.nl']:   [(1,'middag'),(2,'middag'),(3,'ochtend'),(3,'middag'),(4,'ochtend')],
+        staff_ids['petra@kdv.nl']: [(0,'ochtend'),(0,'middag'),(1,'ochtend'),(1,'middag'),(4,'middag')],
+        staff_ids['joris@kdv.nl']: [(2,'ochtend'),(3,'ochtend'),(3,'middag'),(4,'ochtend'),(4,'middag')],
+        staff_ids['lena@kdv.nl']:  [(0,'ochtend'),(1,'ochtend'),(3,'ochtend')],
+        staff_ids['sophie@kdv.nl']:[(0,'ochtend'),(0,'middag'),(2,'ochtend'),(4,'ochtend'),(4,'middag')],
+        staff_ids['erik@kdv.nl']:  [(1,'ochtend'),(2,'ochtend'),(2,'middag'),(3,'middag')],
+    }
+    for uid_av, slots in av_patterns.items():
+        for wk in range(20, 46):
+            for dow,sess in slots:
+                cur.execute('INSERT OR IGNORE INTO weekly_availability(user_id,week_number,year,day_of_week,session)VALUES(?,?,?,?,?)',(uid_av,wk,yr,dow,sess))
 
-    # Waitlist
-    wl_data = [
-        ('extern','Petra van Dam',None,'petra@email.nl','06-11111111','Dorpstraat 5, Roosendaal',None,None,'Roos van Dam',rdate(-365+60),'2025-09-01','[1,1,0,1,0]','52weken','KDV','wachtend',None,85,'Voorkeur ochtendgroep'),
-        ('intern','Familie Bakker','J. Bakker','jan.bakker@mail.nl','06-22222222','Kerkweg 12, Roosendaal',None,None,'Floor Bakker',rdate(-365+90),'2025-08-01','[1,0,1,0,1]','52weken','KDV','wachtend',None,130,'Broer Liam al geplaatst'),
-        ('extern','Anne de Vries',None,'anne.devries@work.nl','06-33333333','Lindelaan 3, Etten-Leur',None,None,'Sem de Vries',rdate(-365+180),'2026-01-01','[0,1,1,1,0]','40weken','KDV','wachtend',None,60,'Woensdagmiddag niet nodig'),
-        ('extern','M. Claassen',None,'m.claassen@mail.nl','06-44444444','Molenweg 8, Roosendaal',None,None,'Julie Claassen',rdate(-365+30),'2025-10-01','[1,1,1,0,0]','52weken','KDV','voorstel_verstuurd',rdate(7),95,'Voorstel verstuurd, wacht op reactie'),
-        ('intern','Hendriks-Smit','D. Hendriks','d.hendriks@mail.nl','06-55555555','Bosweg 22, Roosendaal',None,None,'Tim Hendriks',rdate(-365+120),'2025-11-01','[1,0,1,1,0]','52weken','KDV','wachtend',None,110,'Zus Lars al geplaatst'),
-        ('extern','L. Pietersen',None,'l.pietersen@gmail.com','06-66666666','Haverstraat 1, Roosendaal',None,None,'Bo Pietersen',rdate(-365+200),'2026-03-01','[0,1,0,1,1]','52weken','BSO','wachtend',None,45,'BSO aanvraag na school'),
-    ]
+    # ── WACHTLIJST (25 kinderen) ──
+    wl_voornamen = ['Roos','Floor','Tim','Bo','Nina','Cas','Fem','Luuk','Elin','Jens',
+                    'Vera','Wolf','Amy','Raf','Tine','Bram','Jade','Sven','Maud','Abel',
+                    'Lore','Vic','Stef','Ines','Hanna']
+    wl_data = []
+    for i in range(25):
+        kind = f'{wl_voornamen[i]} {achternamen[(i+10)%len(achternamen)]}'
+        ouder = f'{ouder_vnamen[(i+20)%len(ouder_vnamen)]} {achternamen[(i+10)%len(achternamen)]}'
+        email = f'wl.{wl_voornamen[i].lower()}{i}@mail.nl'
+        list_type = 'intern' if i in [1,4,8,12,17] else 'extern'
+        status = 'voorstel_verstuurd' if i in [3,7,14] else 'wachtend'
+        deadline = rdate(7+i) if status=='voorstel_verstuurd' else None
+        # Leeftijd: mix van groepen
+        if i < 7:    age_mnd = random.randint(2,10);  opvang='KDV'
+        elif i < 14: age_mnd = random.randint(13,22); opvang='KDV'
+        elif i < 21: age_mnd = random.randint(25,46); opvang='KDV'
+        else:        age_mnd = random.randint(50,120);opvang='BSO'
+        days_opts = [[1,1,0,1,0],[1,0,1,0,1],[0,1,1,0,1],[1,1,1,0,0],[0,0,1,1,1]]
+        days = json.dumps(days_opts[i%len(days_opts)])
+        start_offset = random.randint(30,365)
+        desired = rdate(start_offset)
+        score = (100 if list_type=='intern' else 0) + random.randint(20,80)
+        notes_wl = ['Voorkeur ochtendgroep','Beide ouders werken fulltime','Flexibele dagen gewenst',
+                    'Voorstel verstuurd wacht op reactie','Broer/zus al geplaatst',
+                    'Wil graag woensdag','Zwangerschapsverlof tot startdatum','Urgente plaatsing gewenst']
+        note = notes_wl[i%len(notes_wl)]
+        wl_data.append((list_type,ouder,None,email,rand_tel(i+100),f'Adres {i+1}, Roosendaal',
+                        None,None,kind,dob(age_mnd),None,desired,days,'52weken',opvang,status,deadline,score,note))
     for w in wl_data:
-        wid = cur.execute('INSERT INTO waitlist(list_type,parent_name,parent2_name,email,phone,address,bsn_parent,iban,child_name,child_dob,bsn_child,desired_start,days,contract_type,opvang_type,status,proposal_deadline,priority_score,notes)VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-            (w[0],w[1],w[2],w[3],w[4],w[5],w[6],w[7],w[8],w[9],None,w[10],json.dumps(json.loads(w[11]) if isinstance(w[11],str) else w[11]),w[12],w[13],w[14],w[15],w[16],w[17])).lastrowid
+        cur.execute("""INSERT INTO waitlist(list_type,parent_name,parent2_name,email,phone,address,bsn_parent,iban,
+            child_name,child_dob,bsn_child,desired_start,days,contract_type,opvang_type,status,proposal_deadline,priority_score,notes)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", w)
 
-    # Contacts
-    contacts = [
-        ('Petra van Dam','petra@email.nl','06-11111111','wachtlijst',1,'Rondleiding gehad op 12 april'),
-        ('Familie Bakker','jan.bakker@mail.nl','06-22222222','wachtlijst',2,'Intern — broer al geplaatst'),
-        ('Anna Willems','anna.willems@mail.nl','06-77777777','niet_ingeschreven',None,'Rondleiding 3 mei, nog geen aanmelding'),
-        ('Dhr. de Groot','degroot@mail.nl','06-88888888','niet_ingeschreven',None,'Interesse getoond via website'),
-        ('M. Claassen','m.claassen@mail.nl','06-44444444','wachtlijst',4,'Plaatsingsvoorstel verstuurd'),
+    # ── CONTACTEN (10 stuks) ──
+    contact_data = [
+        ('Petra van Dam','petra@email.nl','06-11111111','wachtlijst',1,'Rondleiding 12 april. Interesse Babygroep.'),
+        ('Familie Bakker','jan.bakker@mail.nl','06-22222222','wachtlijst',2,'Intern — broer al geplaatst.'),
+        ('Anna Willems','a.willems@mail.nl','06-77777777','niet_ingeschreven',None,'Rondleiding 3 mei, nog geen aanmelding.'),
+        ('M. Claassen','m.claassen@mail.nl','06-44444444','wachtlijst',4,'Plaatsingsvoorstel verstuurd.'),
+        ('R. Steenbeek','r.steenbeek@mail.nl','06-55566677','niet_ingeschreven',None,'Interesse via website, nog niet ingeschreven.'),
+        ('Fam. van der Molen','vdmolen@gmail.com','06-99988877','wachtlijst',8,'Tweede kind aangemeld.'),
+        ('D. Hoeven','d.hoeven@werk.nl','06-33344455','niet_ingeschreven',None,'Open dag bezocht, oriënterend.'),
+        ('L. Gerritsen','l.gerritsen@mail.nl','06-66677788','wachtlijst',12,'Urgente aanvraag, huidige opvang sluit.'),
+        ('K. van Beek','k.vanbeek@mail.nl','06-88877766','niet_ingeschreven',None,'Doorgestuurd via huisarts.'),
+        ('Fam. Nijs','nijs@email.nl','06-44455566','wachtlijst',17,'Interesse in BSO.'),
     ]
-    for co in contacts:
-        coid = cur.execute('INSERT INTO contacts(name,email,phone,status,waitlist_id,notes)VALUES(?,?,?,?,?,?)',co).lastrowid
+    for co in contact_data:
+        cur.execute('INSERT INTO contacts(name,email,phone,status,waitlist_id,notes)VALUES(?,?,?,?,?,?)',co)
 
-    # Tours
-    guide_id = lid
-    for td,tt,ct,att,st,nt in [
-        (rdate(-14),'10:00',1,2,'geweest','Stel had veel vragen over BKR'),
-        (rdate(-7),'14:00',2,2,'geweest','Positieve indruk, interesse in maandag/woensdag'),
-        (rdate(3),'10:30',3,1,'gepland','Eerste rondleiding voor nieuwe interesse'),
-        (rdate(7),'15:00',4,2,'gepland','Twee ouders verwacht'),
-        (rdate(-21),'11:00',5,1,'no-show','Niet verschenen, contact opnemen'),
+    # ── RONDLEIDINGEN (8 stuks) ──
+    guide_id = staff_ids['lisa@kdv.nl']
+    for ct,td,tt,att,st,nt in [
+        (1, rdate(-21),'10:00',2,'geweest',   'Stel enthousiast, vragen over BKR-normen.'),
+        (2, rdate(-14),'14:00',2,'geweest',   'Positieve indruk. Interesse maandag/woensdag.'),
+        (3, rdate(-7), '11:00',1,'no-show',   'Niet verschenen, opvolging nodig.'),
+        (4, rdate(-3), '10:30',2,'geweest',   'Rondleiding soepel verlopen.'),
+        (5, rdate(2),  '09:30',1,'gepland',   'Eerste kennismaking Babygroep.'),
+        (6, rdate(5),  '14:00',2,'gepland',   'Twee ouders verwacht, BSO-interesse.'),
+        (7, rdate(9),  '10:00',3,'gepland',   'Open dag deelnemers, drie gezinnen.'),
+        (8, rdate(14), '11:30',1,'gepland',   'Urgente aanvraag — zo snel mogelijk bekijken.'),
     ]:
-        cur.execute('INSERT INTO tours(contact_id,tour_date,tour_time,guide_id,attendees,status,notes)VALUES(?,?,?,?,?,?,?)',(ct,td,tt,guide_id,att,st,nt))
+        cur.execute('INSERT INTO tours(contact_id,tour_date,tour_time,guide_id,attendees,status,notes)VALUES(?,?,?,?,?,?,?)',
+                    (ct,td,tt,guide_id,att,st,nt))
 
-    # Activity log
-    for uid,action,details in [
-        (lid,'Observatie afgerond','Emma de Jong'),
-        (sid,'Verlofaanvraag ingediend','3 vakantiedagen aangevraagd'),
-        (None,'Wachtlijstaanmelding','Roos van Dam toegevoegd aan externe wachtlijst'),
-        (None,'Plaatsingsvoorstel verstuurd','Julie Claassen — deadline '+rdate(7)),
-        (mid,'Rondleiding ingepland','Familie Willems — '+rdate(3)),
-    ]:
-        cur.execute('INSERT INTO activity_log(user_id,action,details)VALUES(?,?,?)',(uid,action,details))
+    # ── ACTIVITEITENLOG ──
+    log_data = [
+        (staff_ids['lisa@kdv.nl'],  'Observatie afgerond',        '3 observaties afgevinkt — Babygroep'),
+        (staff_ids['sarah@kdv.nl'], 'Verlofaanvraag ingediend',   '3 vakantiedagen aangevraagd'),
+        (None,                       'Nieuwe aanmelding',          '25 kinderen op wachtlijst'),
+        (None,                       'Plaatsingsvoorstel verstuurd','3 voorstellen verstuurd deze week'),
+        (staff_ids['petra@kdv.nl'], 'Rondleiding begeleid',       'Familie van Dam — positief gesprek'),
+        (staff_ids['mieke@kdv.nl'], 'Rooster gepubliceerd',       'Week '+rdate(0)[:7]+' definitief'),
+        (None,                       'Nieuw kind geplaatst',      'Plaatsing geconfirmeerd: 2 kinderen'),
+        (staff_ids['anna@kdv.nl'],  'Beschikbaarheid bijgewerkt', 'Weken 20–35 ingevoerd'),
+    ]
+    for uid_l,action,details in log_data:
+        cur.execute('INSERT INTO activity_log(user_id,action,details)VALUES(?,?,?)',(uid_l,action,details))
 
-    cur.execute("INSERT INTO db_meta(key,value)VALUES('seeded_v2','1')")
-    c.commit(); c.close(); print('✓ Database initialized with seed data v2')
+    cur.execute("INSERT INTO db_meta(key,value)VALUES('seeded_v3','1')")
+    c.commit(); c.close(); print('✓ Database v3 initialized — 80 kinderen, 12 medewerkers, 25 wachtlijst')
 
 # ══════════════════════════════
 # AUTH
