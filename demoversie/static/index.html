@@ -587,7 +587,7 @@ a{color:inherit;text-decoration:none}
 [data-theme="light"] .more-popup{background:#fff}
 
 /* ── MOBILE TABLE COMPACTION ── */
-@media(max-width:768px){
+@media(max-width:639px){
   /* Planning: verberg Groep + Medewerker kolommen */
   #view-planning .tbl th:nth-child(7),
   #view-planning .tbl th:nth-child(8),
@@ -611,6 +611,24 @@ a{color:inherit;text-decoration:none}
   .wl-tile-info p{ display:none }
 }
 
+/* ── NOTIFICATION PANEL ── */
+.notif-panel{position:fixed;top:0;right:-360px;width:340px;max-width:94vw;height:100vh;background:var(--surface);border-left:1px solid var(--border2);z-index:1500;display:flex;flex-direction:column;transition:right .28s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 40px rgba(0,0,0,.3)}
+.notif-panel.open{right:0}
+.notif-panel-h{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.notif-panel-h h3{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.notif-panel-body{flex:1;overflow-y:auto;padding:10px}
+.notif-card{display:flex;gap:11px;padding:11px 12px;border-radius:10px;margin-bottom:6px;cursor:pointer;transition:.13s;border:1px solid transparent}
+.notif-card:hover{background:rgba(255,255,255,.04);border-color:var(--border)}
+.notif-card-ico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-card-txt h5{font-size:12px;font-weight:700;margin-bottom:2px}
+.notif-card-txt p{font-size:10px;color:var(--text3);line-height:1.5}
+.notif-card-badge{margin-left:auto;align-self:flex-start;flex-shrink:0}
+.notif-backdrop{display:none;position:fixed;inset:0;z-index:1499;background:rgba(0,0,0,.4)}
+.notif-backdrop.on{display:block}
+.notif-empty{text-align:center;padding:32px 16px;color:var(--text3)}
+.notif-empty i{font-size:36px;display:block;margin-bottom:10px;color:var(--border2)}
+[data-theme="light"] .notif-panel{background:#fff}
+
 /* ── PRINT CSS (PDF export) ── */
 @media print{
   body *{visibility:hidden}
@@ -628,35 +646,66 @@ a{color:inherit;text-decoration:none}
 #print-area{display:block}
 #print-header{display:none}
 
-@media(max-width:768px){
+/* ── TABLET (640–1024px): iPad mini/Air/Pro, Galaxy Tab ── */
+@media(min-width:640px) and (max-width:1024px){
+  :root{--sidebar:220px}
+  .bottom-nav{display:none!important}
+  .main{margin-left:220px;padding-bottom:0}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .staff-tiles{grid-template-columns:repeat(2,1fr)}
+  .page-banner{height:130px}
+  .bkr-inputs{grid-template-columns:1fr 1fr}
+  .topbar{padding:0 18px}
+  .page{padding:18px}
+}
+
+/* ── PHONE (<640px): alle iPhones, Samsung Galaxy S/A ── */
+@media(max-width:639px){
   :root{--sidebar:0px}
-  .sidebar{width:252px;transform:translateX(-252px)}
+  .sidebar{width:260px;transform:translateX(-260px)}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0;padding-bottom:72px}
   .hamburger{display:none!important}
   .bottom-nav{display:block}
-  .page{padding:12px}
-  .topbar{padding:0 12px;gap:8px}
+  .page{padding:11px}
+  .topbar{padding:0 10px;gap:7px}
   .g2,.g3{grid-template-columns:1fr}
-  .stats{grid-template-columns:1fr 1fr;gap:9px}
+  .stats{grid-template-columns:1fr 1fr;gap:8px}
   .frow{grid-template-columns:1fr}
   .staff-tiles{grid-template-columns:1fr}
-  .modal{max-width:100%;margin:auto}
-  .page-banner{height:110px}
+  .modal{max-width:100%;margin:auto;border-radius:14px 14px 0 0;position:fixed;bottom:0;left:0;right:0;max-height:92vh}
+  .page-banner{height:100px}
   .g-search{max-width:none;flex:1}
   .bkr-inputs{grid-template-columns:1fr 1fr}
-  .av-grid{grid-template-columns:55px repeat(5,1fr);gap:2px}
+  .av-grid{grid-template-columns:50px repeat(5,1fr);gap:2px}
   .topbar-title{display:none}
   [data-theme="light"] .bottom-nav{background:#fff}
+  /* Touch targets: minimaal 44px */
+  .btn{min-height:40px}
+  .nav-item{min-height:40px}
+  .bn-item{min-height:52px}
+  /* Notif panel full width op phone */
+  .notif-panel{width:100%;max-width:100%;right:-100%}
+  .notif-panel.open{right:0}
 }
-@media(max-width:480px){
+@media(max-width:430px){
+  /* iPhone 14/15 Plus, Pro Max, Galaxy S Ultra */
   .stats{grid-template-columns:1fr 1fr}
   .page-banner{display:none}
-  .tabs{overflow-x:auto;width:100%}
-  .wl-meta{display:none}
-  .login-left{min-height:160px;flex:none}
-  .login-right{width:100%;padding:20px}
-  .ph-actions .btn span{display:none}
+  .tabs{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
+  .login-left{min-height:150px;flex:none}
+  .login-right{width:100%;padding:18px}
+  .ph-actions .btn-sm{padding:7px 10px;font-size:10px}
+}
+@media(max-width:380px){
+  /* iPhone SE, Galaxy S24, kleine Androids */
+  .sc-num{font-size:22px}
+  .stats{gap:6px}
+  .page{padding:9px}
+  .topbar{padding:0 8px;gap:5px}
+  .btn-xs{padding:4px 7px;font-size:9px}
 }
 </style>
 </head>
@@ -1522,6 +1571,7 @@ async function loadMedewerkers() {
   if (!c) return; c.innerHTML='<div class="loader"><i class="ti ti-loader"></i></div>';
   try {
     const staff = await api('GET','/staff'); if(!staff) return; staffList=staff;
+    staff.forEach((s,i)=>{ staffPhotos[s.id]=STAFF_PHOTOS[i%STAFF_PHOTOS.length]; });
     c.innerHTML = staff.map((s,i)=>{
       const photo = STAFF_PHOTOS[i%STAFF_PHOTOS.length];
       const vac = s.vacation_hours_total-s.vacation_hours_used;
@@ -1808,22 +1858,59 @@ function handleSearch(q) {
       const sr = document.getElementById('s-results');
       let html = '';
       if (d.children?.length) {
-        html += `<div class="s-sec-title">Kinderen</div>${d.children.map(c=>`<div class="s-item" onclick="showKidProfile(${c.id});hideSR();document.getElementById('gsearch').value=''"><div class="s-item-av" style="background:${c.group_color||'var(--primary)'}">${c.name.charAt(0)}</div><div class="s-item-info"><h5>${c.name}</h5><p>${c.group_name}</p></div></div>`).join('')}`;
+        html += `<div class="s-sec-title">Kinderen</div>${d.children.map(c=>`<div class="s-item" onclick="searchSelectKind(${c.id},'${c.name.replace(/'/g,'').substring(0,20)}')"><div class="s-item-av" style="background:${c.group_color||'var(--primary)'}">${c.name.charAt(0)}</div><div class="s-item-info"><h5>${c.name}</h5><p>${c.group_name}</p></div><i class="ti ti-arrow-right" style="font-size:12px;color:var(--text3);flex-shrink:0"></i></div>`).join('')}`;
       }
       if (d.staff?.length) {
-        html += `<div class="s-sec-title">Medewerkers</div>${d.staff.map(s=>`<div class="s-item" onclick="showStaffProfileById(${s.id});hideSR();document.getElementById('gsearch').value=''"><div class="s-item-av" style="background:${s.color}">${s.initials}</div><div class="s-item-info"><h5>${s.name}</h5><p>${s.role==='admin'?'Beheerder':'Medewerker'}</p></div></div>`).join('')}`;
+        html += `<div class="s-sec-title">Medewerkers</div>${d.staff.map(s=>`<div class="s-item" onclick="searchSelectMedewerker(${s.id})"><div class="s-item-av" style="background:${s.color}">${s.initials}</div><div class="s-item-info"><h5>${s.name}</h5><p>${s.role==='admin'?'Beheerder':'Medewerker'}</p></div><i class="ti ti-arrow-right" style="font-size:12px;color:var(--text3);flex-shrink:0"></i></div>`).join('')}`;
       }
       if (d.waitlist?.length) {
-        html += `<div class="s-sec-title">Wachtlijst</div>${d.waitlist.map(w=>`<div class="s-item" onclick="showView('wachtlijst');setTimeout(()=>showWLProfile(${w.id}),300);hideSR();document.getElementById('gsearch').value=''"><div class="s-item-av" style="background:var(--primary)">${w.child_name.charAt(0)}</div><div class="s-item-info"><h5>${w.child_name}</h5><p>${w.parent_name} · ${w.status}</p></div></div>`).join('')}`;
+        html += `<div class="s-sec-title">Wachtlijst</div>${d.waitlist.map(w=>`<div class="s-item" onclick="searchSelectWL(${w.id},'${w.child_name.replace(/'/g,'').substring(0,20)}')"><div class="s-item-av" style="background:var(--primary)">${w.child_name.charAt(0)}</div><div class="s-item-info"><h5>${w.child_name}</h5><p>${w.parent_name} · ${w.status}</p></div><i class="ti ti-arrow-right" style="font-size:12px;color:var(--text3);flex-shrink:0"></i></div>`).join('')}`;
       }
       if (d.contacts?.length) {
-        html += `<div class="s-sec-title">Contacten</div>${d.contacts.map(co=>`<div class="s-item" onclick="showView('contacten');hideSR();document.getElementById('gsearch').value=''"><div class="s-item-av" style="background:var(--blue)">${co.name.charAt(0)}</div><div class="s-item-info"><h5>${co.name}</h5><p>${co.email||co.phone||'—'}</p></div></div>`).join('')}`;
+        html += `<div class="s-sec-title">Contacten</div>${d.contacts.map(co=>`<div class="s-item" onclick="searchSelectContact('${co.name.replace(/'/g,'').substring(0,20)}')"><div class="s-item-av" style="background:var(--blue)">${co.name.charAt(0)}</div><div class="s-item-info"><h5>${co.name}</h5><p>${co.email||co.phone||'—'}</p></div><i class="ti ti-arrow-right" style="font-size:12px;color:var(--text3);flex-shrink:0"></i></div>`).join('')}`;
       }
       if (!html) html = '<div class="s-empty">Geen resultaten gevonden</div>';
       sr.innerHTML = html;
       sr.classList.add('show');
     } catch(e) {}
   }, 280);
+}
+
+// Zoekresultaat selectie helpers
+function clearSearch(){ document.getElementById('gsearch').value=''; hideSR(); }
+
+function searchSelectKind(id, name){
+  clearSearch();
+  showView('planning');
+  // Filter planning tabel
+  setTimeout(()=>{
+    const inp = document.querySelector('#view-planning .search-box input');
+    if(inp){ inp.value=name; filterPlan(name); }
+  }, 350);
+  showKidProfile(id);
+}
+
+function searchSelectMedewerker(id){
+  clearSearch();
+  showView('medewerkers');
+  setTimeout(()=> openStaffDetail(id, staffPhotos[id] || STAFF_PHOTOS[0]), 350);
+}
+const staffPhotos = {};
+
+function searchSelectWL(id, name){
+  clearSearch();
+  showView('wachtlijst');
+  setTimeout(()=>{
+    const inp = document.querySelector('#view-wachtlijst .search-box input');
+    if(inp){ inp.value=name; filterWL(name); }
+    showWLProfile(id);
+  }, 400);
+}
+
+function searchSelectContact(name){
+  clearSearch();
+  showView('contacten');
+  // Contacten view heeft geen interne zoek, navigate volstaat
 }
 
 function showKidProfile(id) {
@@ -1985,7 +2072,97 @@ function closeMore(){
   document.getElementById('more-popup')?.classList.remove('on');
   document.getElementById('more-backdrop')?.classList.remove('on');
 }
-function toggleNotif(){/* no-op */}
+function toggleNotif(){
+  const panel=document.getElementById('notif-panel');
+  const backdrop=document.getElementById('notif-backdrop');
+  if(panel.classList.contains('open')){closeNotif();return;}
+  panel.classList.add('open');backdrop.classList.add('on');
+  loadNotifications();
+}
+function closeNotif(){
+  document.getElementById('notif-panel')?.classList.remove('open');
+  document.getElementById('notif-backdrop')?.classList.remove('on');
+}
+async function loadNotifications(){
+  const body=document.getElementById('notif-panel-body');
+  if(!body)return;
+  try{
+    const [dash,leave,wl,tours]=await Promise.all([
+      api('GET','/dashboard'),
+      api('GET','/leave'),
+      api('GET','/waitlist'),
+      api('GET','/tours'),
+    ]);
+    const items=[];
+    // Observaties overschreden
+    if(dash.obs_overdue>0) items.push({
+      color:'var(--red)',bg:'var(--red-l)',icon:'ti-alert-circle',
+      title:`${dash.obs_overdue} observatie${dash.obs_overdue>1?'s':''} overschreden`,
+      sub:'Direct actie vereist — plan nieuwe observatie in',
+      badge:dash.obs_overdue, badgeColor:'var(--red)',
+      action:()=>{closeNotif();showView('observaties');setObsFilter('overdue',document.querySelector('#view-observaties .fchip:nth-child(2)'));}
+    });
+    // Observaties binnenkort
+    if(dash.obs_needed>0) items.push({
+      color:'var(--gold)',bg:'var(--gold-l)',icon:'ti-clock',
+      title:`${dash.obs_needed} observatie${dash.obs_needed>1?'s':''} binnenkort`,
+      sub:'Vervallen binnen 30 dagen',
+      badge:dash.obs_needed, badgeColor:'var(--gold)',
+      action:()=>{closeNotif();showView('observaties');setObsFilter('needed',document.querySelector('#view-observaties .fchip:nth-child(3)'));}
+    });
+    // Verlofaanvragen (admin)
+    const pendingLeave=(leave||[]).filter(l=>l.status==='pending');
+    if(pendingLeave.length>0) items.push({
+      color:'var(--blue)',bg:'var(--blue-l)',icon:'ti-beach',
+      title:`${pendingLeave.length} verlofaanvra${pendingLeave.length===1?'ag':'gen'} open`,
+      sub:pendingLeave.slice(0,2).map(l=>l.user_name).join(', '),
+      badge:pendingLeave.length, badgeColor:'var(--blue)',
+      action:()=>{closeNotif();showView('werkrooster');setTimeout(()=>showTab('verlof'),200);}
+    });
+    // Wachtlijst voorstellen met deadline
+    const proposals=(wl||[]).filter(w=>w.status==='voorstel_verstuurd');
+    proposals.forEach(w=>{
+      if(w.proposal_deadline){
+        const days=Math.ceil((new Date(w.proposal_deadline)-new Date())/86400000);
+        if(days<=7) items.push({
+          color:'var(--primary)',bg:'var(--prim-l)',icon:'ti-send',
+          title:`Voorstel: ${w.child_name}`,
+          sub:`Deadline: ${fmtDate(w.proposal_deadline)} (${days<=0?'verlopen':days+'d'})`,
+          badge:days<=0?'!':days+'d', badgeColor:days<=0?'var(--red)':'var(--primary)',
+          action:()=>{closeNotif();showView('wachtlijst');}
+        });
+      }
+    });
+    // Rondleidingen vandaag/morgen
+    const today=new Date().toISOString().split('T')[0];
+    const tomorrow=new Date(Date.now()+86400000).toISOString().split('T')[0];
+    (tours||[]).filter(t=>t.status==='gepland'&&(t.tour_date===today||t.tour_date===tomorrow)).forEach(t=>{
+      items.push({
+        color:'var(--violet)',bg:'var(--viol-l)',icon:'ti-calendar-event',
+        title:`Rondleiding: ${t.contact_name||'Onbekend'}`,
+        sub:`${t.tour_date===today?'Vandaag':'Morgen'} om ${t.tour_time} · ${t.attendees} pers.`,
+        badge:null, badgeColor:'var(--violet)',
+        action:()=>{closeNotif();showView('contacten');}
+      });
+    });
+    if(!items.length){
+      body.innerHTML='<div class="notif-empty"><i class="ti ti-checks"></i><p>Geen openstaande meldingen</p></div>';
+      return;
+    }
+    body.innerHTML=items.map((item,i)=>`
+      <div class="notif-card" onclick="notifActions[${i}]&&notifActions[${i}]()">
+        <div class="notif-card-ico" style="background:${item.bg};color:${item.color}"><i class="ti ${item.icon}"></i></div>
+        <div class="notif-card-txt">
+          <h5>${item.title}</h5>
+          <p>${item.sub}</p>
+        </div>
+        ${item.badge!==null?`<span class="badge notif-card-badge" style="background:${item.badgeColor}20;color:${item.badgeColor}">${item.badge}</span>`:''}
+      </div>`).join('');
+    window.notifActions=items.map(i=>i.action);
+  }catch(e){
+    document.getElementById('notif-panel-body').innerHTML='<div class="notif-empty"><i class="ti ti-wifi-off"></i><p>Kan meldingen niet laden</p></div>';
+  }
+}
 function toggleTheme(){
   const html=document.documentElement;
   const current=html.getAttribute('data-theme')||'dark';
