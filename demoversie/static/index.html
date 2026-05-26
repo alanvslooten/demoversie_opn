@@ -2120,25 +2120,29 @@ async function addTour(){
   try{await api('POST','/tours',{contact_id:parseInt(document.getElementById('tour-contact')?.value)||null,tour_date:date,tour_time:time,guide_id:parseInt(document.getElementById('tour-guide')?.value)||currentUser.id,attendees:parseInt(document.getElementById('tour-att')?.value)||2,notes:document.getElementById('tour-notes')?.value});closeModal('modal-add-tour');toast('Rondleiding gepland!');loadContacten();}catch(e){toast('Fout: '+e.message);}
 }
 function exportCSV(type) {
-  if (type === 'planning') {
-    if (!allChildren || !allChildren.length) { toast('Laad eerst de planning'); return; }
-    const rows = [['Kind','Geboortedatum','Groep','Ma','Di','Wo','Do','Vr','Medewerker','Contact','Telefoon']];
-    allChildren.forEach(ch => {
-      const days = Array.isArray(ch.days) ? ch.days : [0,0,0,0,0];
-      rows.push([ch.name, ch.dob||'', ch.group_name, ...days.map(d=>d?'Ja':''), ch.leidster_name||'', ch.contact_name||'', ch.contact_phone||'']);
-    });
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('
-');
-    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url;
-    a.download=`kinderplanning_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast('Planning geëxporteerd! ✓');
-  }
+  if (type !== 'planning') return;
+  if (!allChildren || !allChildren.length) { toast('Laad eerst de planning'); return; }
+  const header = ['Kind','Geboortedatum','Groep','Ma','Di','Wo','Do','Vr','Medewerker','Contact','Telefoon'];
+  const lines = [header.join(',')];
+  allChildren.forEach(function(ch) {
+    const days = Array.isArray(ch.days) ? ch.days : [0,0,0,0,0];
+    const row = [
+      ch.name, ch.dob||'', ch.group_name,
+      days[0]?'Ja':'', days[1]?'Ja':'', days[2]?'Ja':'', days[3]?'Ja':'', days[4]?'Ja':'',
+      ch.leidster_name||'', ch.contact_name||'', ch.contact_phone||''
+    ];
+    lines.push(row.map(function(v){ return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','));
+  });
+  const csv = lines.join('\r\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kinderplanning_' + new Date().toISOString().split('T')[0] + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Planning geexporteerd! ' + allChildren.length + ' kinderen');
 }
-
 function exportRoosterPDF(){
   // Zet print-week-label
   const lbl = document.getElementById('rooster-wk-label');
