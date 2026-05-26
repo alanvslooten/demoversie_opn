@@ -8,15 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>/* ── PALETTE (from palette.css) ── */
+/* ── SHARED TOKENS (both modes) ── */
 :root {
-  --bg:       #111827;
-  --surface:  #1f2937;
-  --surface2: #374151;
-  --border:   rgba(55,65,81,.4);
-  --border2:  rgba(55,65,81,.8);
-  --text:     #f9fafb;
-  --text2:    #9ca3af;
-  --text3:    #6b7280;
   --primary:  #6366f1;
   --prim-d:   #4f46e5;
   --prim-l:   rgba(99,102,241,.15);
@@ -38,9 +31,36 @@
   --r:        12px;
   --r-sm:     8px;
   --r-xl:     18px;
+}
+
+/* ── DARK MODE (default) ── */
+:root, [data-theme="dark"] {
+  --bg:       #111827;
+  --surface:  #1f2937;
+  --surface2: #374151;
+  --border:   rgba(55,65,81,.4);
+  --border2:  rgba(55,65,81,.8);
+  --text:     #f9fafb;
+  --text2:    #9ca3af;
+  --text3:    #6b7280;
   --shadow:   0 1px 12px rgba(0,0,0,.3);
   --shadow-md:0 4px 28px rgba(0,0,0,.4);
   --shadow-lg:0 12px 52px rgba(0,0,0,.55);
+}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] {
+  --bg:       #f8f9ff;
+  --surface:  #ffffff;
+  --surface2: #f1f3fb;
+  --border:   rgba(99,102,241,.12);
+  --border2:  rgba(99,102,241,.22);
+  --text:     #1e1b4b;
+  --text2:    #4338ca;
+  --text3:    #6b7280;
+  --shadow:   0 1px 12px rgba(99,102,241,.08);
+  --shadow-md:0 4px 28px rgba(99,102,241,.13);
+  --shadow-lg:0 12px 52px rgba(99,102,241,.18);
 }
 
 /* ── RESET ── */
@@ -138,6 +158,48 @@ a{color:inherit;text-decoration:none}
 .sb-photo img{width:100%;height:100%;object-fit:cover;filter:brightness(.4) saturate(.6);transition:transform 6s}
 .sb-photo:hover img{transform:scale(1.06)}
 .sb-photo-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 15%,var(--surface) 100%)}
+/* ── LIGHT MODE SPECIFIC OVERRIDES ── */
+[data-theme="light"] .topbar{background:rgba(248,249,255,.94)}
+[data-theme="light"] .sidebar{background:linear-gradient(180deg,#312e81 0%,#3730a3 100%)}
+[data-theme="light"] .sb-photo-overlay{background:linear-gradient(to bottom,transparent 15%,#312e81 100%)}
+[data-theme="light"] .login-right{background:#f8f9ff}
+[data-theme="light"] .fld input,[data-theme="light"] .fld select,[data-theme="light"] .fld textarea{background:#f1f3fb}
+[data-theme="light"] .search-box{background:#fff}
+[data-theme="light"] .g-search-inp{background:#f1f3fb}
+[data-theme="light"] .s-results{background:#fff}
+[data-theme="light"] .modal{background:#fff}
+[data-theme="light"] .modal-h,[data-theme="light"] .modal-f{background:#fff}
+[data-theme="light"] .card{background:#fff}
+[data-theme="light"] .sc{background:#fff}
+[data-theme="light"] .tbl-wrap{background:#fff}
+[data-theme="light"] .tbl th{background:#f1f3fb}
+[data-theme="light"] .wl-tile{background:#fff}
+[data-theme="light"] .leave-card{background:#fff}
+[data-theme="light"] .tour-card{background:#fff}
+[data-theme="light"] .staff-tile{background:#fff}
+[data-theme="light"] .assign-row{background:#f1f3fb}
+[data-theme="light"] .tile-kids{background:#f1f3fb}
+[data-theme="light"] .upload-zone{background:#f1f3fb}
+[data-theme="light"] .tabs{background:#f1f3fb}
+[data-theme="light"] .tab.on{background:#fff}
+[data-theme="light"] .sb-bottom{border-color:rgba(255,255,255,.15)}
+[data-theme="light"] .sched{background:#fff}
+[data-theme="light"] .login-demo{background:#f1f3fb}
+[data-theme="light"] .setting-block{background:#fff}
+[data-theme="light"] .setting-block-h{background:#f1f3fb}
+[data-theme="light"] .prof-card{background:#fff}
+[data-theme="light"] #toast{background:#fff}
+[data-theme="light"] .btn-outline{color:#4338ca;border-color:rgba(99,102,241,.3)}
+[data-theme="light"] .btn-icon{background:rgba(99,102,241,.08);color:#4338ca}
+[data-theme="light"] .nav-item{color:rgba(255,255,255,.7)}
+[data-theme="light"] .nav-item:hover{background:rgba(255,255,255,.12);color:#fff}
+[data-theme="light"] .nav-item.on{background:rgba(255,255,255,.2);color:#fff}
+[data-theme="light"] .nav-sec{color:rgba(255,255,255,.45)}
+[data-theme="light"] .sb-brand-text h1{color:#fff}
+[data-theme="light"] .sb-brand-text span{color:rgba(255,255,255,.5)}
+[data-theme="light"] .sb-user-info p{color:#fff}
+[data-theme="light"] .sb-user-info span{color:rgba(255,255,255,.5)}
+[data-theme="light"] .sb-logout{color:rgba(255,255,255,.5)}
 .sb-brand{position:absolute;bottom:10px;left:14px;display:flex;align-items:center;gap:9px}
 .sb-brand-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--primary),var(--violet));border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0}
 .sb-brand-text h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;color:#fff;line-height:1}
@@ -601,6 +663,7 @@ a{color:inherit;text-decoration:none}
         <div class="s-results" id="s-results"></div>
       </div>
       <div class="topbar-actions">
+        <button class="btn-icon" id="theme-btn" onclick="toggleTheme()" title="Light/Dark mode"><i class="ti ti-sun" id="theme-icon"></i></button>
         <button class="btn-icon" onclick="toggleNotif()"><i class="ti ti-bell"></i><span id="notif-dot" style="display:none;position:absolute;top:4px;right:4px;width:6px;height:6px;background:var(--red);border-radius:50%;border:2px solid var(--surface)"></span></button>
       </div>
     </div>
@@ -1716,7 +1779,16 @@ function openModal(id){document.getElementById(id).classList.add('on');}
 function closeModal(id){document.getElementById(id).classList.remove('on');}
 function toggleSb(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('on');}
 function closeSb(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('on');}
-function toggleNotif(){/* no-op for now */}
+function toggleNotif(){/* no-op */}
+function toggleTheme(){
+  const html=document.documentElement;
+  const current=html.getAttribute('data-theme')||'dark';
+  const next=current==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+  localStorage.setItem('kk_theme',next);
+  const icon=document.getElementById('theme-icon');
+  if(icon){icon.className=next==='dark'?'ti ti-sun':'ti ti-moon';}
+}
 
 document.addEventListener('click', e => {
   document.querySelectorAll('.overlay.on').forEach(o => { if(e.target===o) o.classList.remove('on'); });
@@ -1745,6 +1817,11 @@ function fmtDate(d){
 // INIT
 // ══════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply saved theme
+  const savedTheme=localStorage.getItem('kk_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',savedTheme);
+  const icon=document.getElementById('theme-icon');
+  if(icon){icon.className=savedTheme==='dark'?'ti ti-sun':'ti ti-moon';}
   initPhotos();
   calcBKR();
 
