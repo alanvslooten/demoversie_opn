@@ -264,27 +264,25 @@ a{color:inherit;text-decoration:none}
 .view{display:none}
 .view.on{display:block;animation:fadeUp .3s ease}
 /* Tabellen en lijsten scrollen intern — geen hele-pagina-scroll */
-.tbl-wrap{max-height:calc(100vh - 340px);overflow-y:auto}
-/* Scrollbare containers voor alle content-secties */
-.scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch}
-#staff-tiles{max-height:calc(100vh - 260px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#wl-list{max-height:calc(100vh - 260px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#contacts-list{max-height:calc(50vh - 80px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#tours-list.card-b{max-height:calc(50vh - 80px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#uren-content{max-height:calc(100vh - 280px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#verlof-content{max-height:calc(100vh - 300px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#assign-content{max-height:calc(100vh - 260px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#av-form{max-height:calc(50vh - 60px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#av-team{max-height:calc(100vh - 260px);overflow-y:auto;-webkit-overflow-scrolling:touch}
-#week-pills{max-height:180px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.sched-wrap{max-height:calc(100vh - 320px);overflow:auto;-webkit-overflow-scrolling:touch}
-.notif-panel-body{-webkit-overflow-scrolling:touch}
+/* Scrollbare containers — alleen tablet & desktop */
+@media(min-width:640px){
+  .tbl-wrap{max-height:calc(100vh - 340px);overflow-y:auto}
+  #staff-tiles{max-height:calc(100vh - 260px);overflow-y:auto}
+  #wl-list{max-height:calc(100vh - 260px);overflow-y:auto}
+  #contacts-list{max-height:calc(50vh - 80px);overflow-y:auto}
+  #tours-list{max-height:calc(50vh - 80px);overflow-y:auto}
+  #uren-content{max-height:calc(100vh - 280px);overflow-y:auto}
+  #verlof-content{max-height:calc(100vh - 300px);overflow-y:auto}
+  #assign-content{max-height:calc(100vh - 260px);overflow-y:auto}
+  #av-form{max-height:calc(40vh);overflow-y:auto}
+  #av-team{max-height:calc(100vh - 260px);overflow-y:auto}
+  #week-pills{max-height:180px;overflow-y:auto}
+  .sched-wrap{max-height:calc(100vh - 320px);overflow:auto}
+}
 @media(max-width:639px){
-  .page{height:calc(100vh - var(--topbar) - 72px);padding:10px}
-  .tbl-wrap{max-height:calc(100vh - 380px)}
-  #staff-tiles{max-height:calc(100vh - 280px)}
-  #wl-list{max-height:calc(100vh - 280px)}
-  .sched-wrap{max-height:calc(100vh - 340px)}
+  .page{height:auto;padding:10px}
+  .tbl-wrap{overflow-x:auto}
+  .sched-wrap{overflow-x:auto}
 }
 @media(min-width:640px) and (max-width:1024px){
   .page{padding:16px}
