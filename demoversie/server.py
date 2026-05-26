@@ -544,15 +544,41 @@ def search():
     if len(q) < 2: return jsonify({'children':[],'staff':[],'waitlist':[],'contacts':[]})
     c = get_db(); uid = request.user['id']; role = request.user['role']
     like = f'%{q}%'
+    # Kinderen: zoek op naam + contactpersoon + groep
     if role == 'admin':
-        kids = c.execute('SELECT id,name,group_name,group_color,assigned_leidster_id FROM children WHERE active=1 AND LOWER(name) LIKE ? LIMIT 5',(like,)).fetchall()
+        kids = c.execute('''SELECT id,name,group_name,group_color,assigned_leidster_id,contact_name,contact_phone
+            FROM children WHERE active=1
+            AND (LOWER(name) LIKE ? OR LOWER(contact_name) LIKE ? OR LOWER(group_name) LIKE ?)
+            ORDER BY CASE WHEN LOWER(name) LIKE ? THEN 0 ELSE 1 END, name
+            LIMIT 8''',(like,like,like,like)).fetchall()
     else:
-        kids = c.execute('SELECT id,name,group_name,group_color,assigned_leidster_id FROM children WHERE active=1 AND assigned_leidster_id=? AND LOWER(name) LIKE ? LIMIT 5',(uid,like)).fetchall()
-    staff = c.execute('SELECT id,name,role,initials,color FROM users WHERE active=1 AND LOWER(name) LIKE ? LIMIT 5',(like,)) .fetchall() if role=='admin' else []
-    wl = c.execute('SELECT id,child_name,parent_name,status,list_type FROM waitlist WHERE LOWER(child_name) LIKE ? OR LOWER(parent_name) LIKE ? LIMIT 5',(like,like)).fetchall() if role=='admin' else []
-    contacts = c.execute('SELECT id,name,email,phone,status FROM contacts WHERE LOWER(name) LIKE ? OR LOWER(email) LIKE ? LIMIT 5',(like,like)).fetchall() if role=='admin' else []
+        kids = c.execute('''SELECT id,name,group_name,group_color,assigned_leidster_id,contact_name,contact_phone
+            FROM children WHERE active=1 AND assigned_leidster_id=?
+            AND (LOWER(name) LIKE ? OR LOWER(contact_name) LIKE ?)
+            ORDER BY name LIMIT 8''',(uid,like,like)).fetchall()
+    # Medewerkers: naam + email (admin only)
+    staff = c.execute('''SELECT id,name,role,initials,color,email
+        FROM users WHERE active=1
+        AND (LOWER(name) LIKE ? OR LOWER(email) LIKE ?)
+        LIMIT 5''',(like,like)).fetchall() if role=='admin' else []
+    # Wachtlijst: kind, ouder, email, telefoon (admin only)
+    wl = c.execute('''SELECT id,child_name,parent_name,email,phone,status,list_type,desired_start
+        FROM waitlist
+        WHERE (LOWER(child_name) LIKE ? OR LOWER(parent_name) LIKE ? OR LOWER(email) LIKE ? OR LOWER(phone) LIKE ?)
+        ORDER BY CASE WHEN LOWER(child_name) LIKE ? THEN 0 ELSE 1 END, child_name
+        LIMIT 8''',(like,like,like,like,like)).fetchall() if role=='admin' else []
+    # Contacten: naam, email, telefoon (admin only)
+    contacts = c.execute('''SELECT id,name,email,phone,status
+        FROM contacts
+        WHERE (LOWER(name) LIKE ? OR LOWER(email) LIKE ? OR LOWER(phone) LIKE ?)
+        LIMIT 5''',(like,like,like)).fetchall() if role=='admin' else []
     c.close()
-    return jsonify({'children':[dict(r) for r in kids],'staff':[dict(r) for r in staff],'waitlist':[dict(r) for r in wl],'contacts':[dict(r) for r in contacts]})
+    return jsonify({
+        'children':[dict(r) for r in kids],
+        'staff':[dict(r) for r in staff],
+        'waitlist':[dict(r) for r in wl],
+        'contacts':[dict(r) for r in contacts]
+    })
 
 # ══════════════════════════════
 # DASHBOARD
