@@ -63,6 +63,15 @@
   --shadow-lg:0 12px 52px rgba(99,102,241,.18);
 }
 
+/* ── RESPONSIVE TYPOGRAPHY ── */
+html { font-size: clamp(13px, 1.1vw, 15px); }
+.topbar-title { font-size: clamp(14px, 2vw, 17px); }
+.page-banner-text h1 { font-size: clamp(18px, 3.5vw, 26px); }
+.sc-num  { font-size: clamp(22px, 3vw, 30px); }
+.ph h1   { font-size: clamp(16px, 2.5vw, 22px); }
+.modal-h h2, .modal-photo-overlay h2 { font-size: clamp(15px, 2vw, 18px); }
+.bkr-big { font-size: clamp(36px, 5vw, 52px); }
+
 /* ── RESET ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -554,24 +563,54 @@ a{color:inherit;text-decoration:none}
   .g3{grid-template-columns:1fr 1fr}
   .bkr-inputs{grid-template-columns:1fr 1fr}
 }
+/* ── BOTTOM NAV (mobile) ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surface);border-top:1px solid var(--border);padding:6px 0 max(6px,env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.15)}
+.bottom-nav-inner{display:flex;align-items:stretch;justify-content:space-around}
+.bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 10px;border-radius:10px;cursor:pointer;transition:.15s;color:var(--text3);border:none;background:transparent;flex:1;min-width:0;position:relative}
+.bn-item.on{color:var(--primary)}
+.bn-item.on::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:3px;background:var(--primary);border-radius:0 0 3px 3px}
+.bn-item i{font-size:21px;transition:.15s}
+.bn-item.on i{transform:scale(1.12)}
+.bn-badge{position:absolute;top:4px;right:calc(50% - 18px);background:var(--red);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center}
+.bn-badge.gold{background:var(--gold);color:#111}
+
+/* ── PRINT CSS (PDF export) ── */
+@media print{
+  body *{visibility:hidden}
+  #print-area,#print-area *{visibility:visible}
+  #print-area{position:fixed;top:0;left:0;right:0;width:100%;padding:20px}
+  .sched-wrap{overflow:visible!important}
+  .sched{box-shadow:none!important;border:1px solid #ddd!important}
+  .sched-grid{font-size:10px}
+  .shift{font-size:9px;padding:2px 4px}
+  #print-header{display:block!important;margin-bottom:16px;font-family:'Plus Jakarta Sans',sans-serif}
+  #print-header h2{font-size:18px;font-weight:800;margin-bottom:3px}
+  #print-header p{font-size:11px;color:#666}
+  @page{size:A4 landscape;margin:1.5cm}
+}
+#print-area{display:block}
+#print-header{display:none}
+
 @media(max-width:768px){
   :root{--sidebar:0px}
   .sidebar{width:252px;transform:translateX(-252px)}
   .sidebar.open{transform:translateX(0)}
-  .main{margin-left:0}
-  .hamburger{display:flex}
+  .main{margin-left:0;padding-bottom:72px}
+  .hamburger{display:none!important}
+  .bottom-nav{display:block}
   .page{padding:12px}
   .topbar{padding:0 12px;gap:8px}
   .g2,.g3{grid-template-columns:1fr}
   .stats{grid-template-columns:1fr 1fr;gap:9px}
   .frow{grid-template-columns:1fr}
   .staff-tiles{grid-template-columns:1fr}
-  .modal{max-width:100%}
+  .modal{max-width:100%;margin:auto}
   .page-banner{height:110px}
-  .page-banner-text h1{font-size:20px}
   .g-search{max-width:none;flex:1}
   .bkr-inputs{grid-template-columns:1fr 1fr}
   .av-grid{grid-template-columns:55px repeat(5,1fr);gap:2px}
+  .topbar-title{display:none}
+  [data-theme="light"] .bottom-nav{background:#fff}
 }
 @media(max-width:480px){
   .stats{grid-template-columns:1fr 1fr}
@@ -580,6 +619,7 @@ a{color:inherit;text-decoration:none}
   .wl-meta{display:none}
   .login-left{min-height:160px;flex:none}
   .login-right{width:100%;padding:20px}
+  .ph-actions .btn span{display:none}
 }
 </style>
 </head>
@@ -615,6 +655,17 @@ a{color:inherit;text-decoration:none}
 
 <!-- ═══ APP ═══ -->
 <div class="sb-overlay" id="sb-overlay" onclick="closeSb()"></div>
+<!-- BOTTOM NAV (mobile only) -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bn-item on" id="bn-dashboard" onclick="showView('dashboard');setBN('dashboard')"><i class="ti ti-dashboard"></i><span class="bn-badge gold" id="bn-wl-badge" style="display:none">0</span></button>
+    <button class="bn-item" id="bn-planning" onclick="showView('planning');setBN('planning')"><i class="ti ti-calendar-week"></i></button>
+    <button class="bn-item" id="bn-observaties" onclick="showView('observaties');setBN('observaties')"><i class="ti ti-clipboard-check"></i><span class="bn-badge" id="bn-obs-badge" style="display:none">!</span></button>
+    <button class="bn-item" id="bn-wachtlijst" onclick="showView('wachtlijst');setBN('wachtlijst')"><i class="ti ti-list-numbers"></i></button>
+    <button class="bn-item" id="bn-werkrooster" onclick="showView('werkrooster');setBN('werkrooster')"><i class="ti ti-clock"></i></button>
+    <button class="bn-item" id="bn-more" onclick="toggleSb()"><i class="ti ti-dots"></i></button>
+  </div>
+</nav>
 <div id="app">
   <!-- SIDEBAR -->
   <nav class="sidebar" id="sidebar">
@@ -727,9 +778,9 @@ a{color:inherit;text-decoration:none}
       <!-- ═══ WERKROOSTER ═══ -->
       <div class="view" id="view-werkrooster">
         <div class="page-banner"><img src="https://images.unsplash.com/photo-1510125750144-795c2b0737ba?q=80&w=800&auto=format&fit=crop" alt=""><div class="page-banner-overlay"><div class="page-banner-text"><h1><i class="ti ti-clock"></i> Werkrooster</h1><p>Diensten, uren en verlofaanvragen</p></div></div></div>
-        <div class="ph"><div></div><div class="ph-actions"><button class="btn btn-outline btn-sm admin-only" onclick="autoSchedule()"><i class="ti ti-wand"></i>Auto-plannen</button><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-shift')"><i class="ti ti-plus"></i>Dienst toevoegen</button></div></div>
+        <div class="ph"><div></div><div class="ph-actions"><button class="btn btn-outline btn-sm" onclick="exportRoosterPDF()"><i class="ti ti-file-type-pdf"></i>PDF exporteren</button><button class="btn btn-outline btn-sm admin-only" onclick="autoSchedule()"><i class="ti ti-wand"></i>Auto-plannen</button><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-shift')"><i class="ti ti-plus"></i>Dienst toevoegen</button></div></div>
         <div class="tabs"><button class="tab on" onclick="showTab('rooster')">Weekrooster</button><button class="tab" onclick="showTab('uren')">Urenregistratie</button><button class="tab" onclick="showTab('verlof')">Verlofaanvragen <span id="leave-tab-cnt" style="display:none;background:var(--red);color:#fff;border-radius:9px;padding:0 5px;font-size:9px">0</span></button></div>
-        <div id="tab-rooster"><div class="wk-nav"><button onclick="prevWeek()"><i class="ti ti-chevron-left"></i></button><span id="rooster-wk-label">laden...</span><button onclick="nextWeek()"><i class="ti ti-chevron-right"></i></button></div><div class="sched-wrap" id="sched-container"></div></div>
+        <div id="tab-rooster"><div class="wk-nav"><button onclick="prevWeek()"><i class="ti ti-chevron-left"></i></button><span id="rooster-wk-label">laden...</span><button onclick="nextWeek()"><i class="ti ti-chevron-right"></i></button></div><div id="print-area"><div id="print-header"><h2>KinderKompas — Werkrooster</h2><p id="print-week-label"></p></div><div class="sched-wrap" id="sched-container"></div></div></div>
         <div id="tab-uren" style="display:none"><div id="uren-content"><div class="loader"><i class="ti ti-loader"></i></div></div></div>
         <div id="tab-verlof" style="display:none"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-blue btn-sm" onclick="openModal('modal-add-leave')"><i class="ti ti-beach"></i>Verlof aanvragen</button></div><div id="verlof-content"><div class="loader"><i class="ti ti-loader"></i></div></div></div>
       </div>
@@ -1142,6 +1193,10 @@ function showView(id) {
   document.getElementById('topbar-title').textContent = viewTitles[id] || id;
   closeSb();
   hideSR();
+  // Update bottom nav active state
+  const bnIds=['dashboard','planning','observaties','werkrooster','wachtlijst','medewerkers','beschikbaarheid','contacten','bkr','toewijzen','instellingen'];
+  document.querySelectorAll('.bn-item[id^="bn-"]').forEach(b=>b.classList.remove('on'));
+  if(bnIds.includes(id)){const el=document.getElementById('bn-'+id);if(el)el.classList.add('on');}
 
   if (id === 'dashboard')      loadDashboard();
   if (id === 'planning')       loadPlanning();
@@ -1771,6 +1826,25 @@ async function addTour(){
   try{await api('POST','/tours',{contact_id:parseInt(document.getElementById('tour-contact')?.value)||null,tour_date:date,tour_time:time,guide_id:parseInt(document.getElementById('tour-guide')?.value)||currentUser.id,attendees:parseInt(document.getElementById('tour-att')?.value)||2,notes:document.getElementById('tour-notes')?.value});closeModal('modal-add-tour');toast('Rondleiding gepland!');loadContacten();}catch(e){toast('Fout: '+e.message);}
 }
 function exportCSV(type){ toast('Export wordt voorbereid...'); }
+
+function exportRoosterPDF(){
+  // Zet print-week-label
+  const lbl = document.getElementById('rooster-wk-label');
+  const plbl = document.getElementById('print-week-label');
+  if(lbl && plbl) plbl.textContent = lbl.textContent;
+  // Zorg dat rooster tab actief is
+  showTab('rooster');
+  setTimeout(() => {
+    window.print();
+    toast('PDF exporteren gestart...');
+  }, 300);
+}
+
+function setBN(id){
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('on'));
+  const el = document.getElementById('bn-'+id);
+  if(el) el.classList.add('on');
+}
 
 // ══════════════════════════════
 // MODAL & SIDEBAR HELPERS
