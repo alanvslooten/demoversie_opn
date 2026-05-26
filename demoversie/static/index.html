@@ -976,6 +976,18 @@ a{color:inherit;text-decoration:none}
   </div><!-- /main -->
 </div><!-- /app -->
 
+<!-- NOTIFICATION PANEL -->
+<div class="notif-backdrop" id="notif-backdrop" onclick="closeNotif()"></div>
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-panel-h">
+    <h3><i class="ti ti-bell" style="color:var(--primary)"></i>Meldingen</h3>
+    <button class="xbtn" onclick="closeNotif()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="notif-panel-body" id="notif-panel-body">
+    <div class="loader"><i class="ti ti-loader"></i></div>
+  </div>
+</div>
+
 <!-- ═══ MODALS ═══ -->
 <!-- ADD CHILD -->
 <div class="overlay" id="modal-add-child">
