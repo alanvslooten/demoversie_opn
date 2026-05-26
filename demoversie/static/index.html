@@ -242,10 +242,12 @@ a{color:inherit;text-decoration:none}
 .hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:19px;padding:4px;flex-shrink:0}
 
 /* GLOBAL SEARCH */
-.g-search{flex:1;max-width:360px;position:relative}
-.g-search-inp{width:100%;padding:8px 13px 8px 34px;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--r-sm);color:var(--text);font-size:12px;outline:none;transition:.18s}
-.g-search-inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--prim-gl)}
-.g-search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px;pointer-events:none}
+.g-search{flex:1;max-width:480px;position:relative}
+.g-search-inp{width:100%;padding:10px 16px 10px 40px;background:var(--surface);border:2px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;outline:none;transition:.2s;box-shadow:var(--shadow)}
+.g-search-inp:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--prim-gl),var(--shadow-md);background:var(--surface)}
+.g-search-inp::placeholder{color:var(--text3)}
+.g-search-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:17px;pointer-events:none;transition:.2s}
+.g-search:focus-within .g-search-ico{color:var(--primary)}
 .s-results{position:absolute;top:calc(100% + 5px);left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:var(--shadow-md);z-index:300;overflow:hidden;display:none;animation:fadeIn .12s ease;max-height:400px;overflow-y:auto}
 .s-results.show{display:block}
 .s-sec-title{padding:7px 12px 3px;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
@@ -258,9 +260,19 @@ a{color:inherit;text-decoration:none}
 .topbar-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
 
 /* ── PAGE ── */
-.page{padding:20px}
+.page{padding:20px;height:calc(100vh - var(--topbar));overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
 .view{display:none}
 .view.on{display:block;animation:fadeUp .3s ease}
+/* Tabellen en lijsten scrollen intern — geen hele-pagina-scroll */
+.tbl-wrap{max-height:calc(100vh - 380px);overflow-y:auto}
+@media(max-width:639px){
+  .page{height:calc(100vh - var(--topbar) - 72px);padding:10px}
+  .tbl-wrap{max-height:calc(100vh - 420px)}
+}
+@media(min-width:640px) and (max-width:1024px){
+  .page{padding:16px}
+  .tbl-wrap{max-height:calc(100vh - 360px)}
+}
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .ph h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800}
 .ph p{font-size:11px;color:var(--text3);margin-top:3px}
@@ -357,10 +369,11 @@ a{color:inherit;text-decoration:none}
 
 /* FILTERS */
 .filters{display:flex;align-items:center;gap:7px;margin-bottom:14px;flex-wrap:wrap}
-.search-box{display:flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--r-sm);padding:7px 11px;flex:1;min-width:160px;transition:.18s}
-.search-box:focus-within{border-color:var(--primary)}
-.search-box i{color:var(--text3);font-size:14px}
-.search-box input{border:none;outline:none;background:transparent;font-size:12px;color:var(--text);width:100%}
+.search-box{display:flex;align-items:center;gap:9px;background:var(--surface);border:2px solid var(--border2);border-radius:var(--r);padding:10px 14px;flex:1;min-width:160px;transition:.2s;box-shadow:var(--shadow)}
+.search-box:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--prim-gl),var(--shadow)}
+.search-box i{color:var(--text3);font-size:16px;flex-shrink:0;transition:.2s}
+.search-box:focus-within i{color:var(--primary)}
+.search-box input{border:none;outline:none;background:transparent;font-size:13px;color:var(--text);width:100%}
 .fchip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--border2);font-size:10px;font-weight:700;cursor:pointer;transition:.13s;background:transparent;color:var(--text3)}
 .fchip:hover{border-color:var(--primary);color:var(--primary)}
 .fchip.on{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -854,8 +867,9 @@ a{color:inherit;text-decoration:none}
           <button class="fchip" onclick="setPlanFilter('Dreumesgroep',this)">🧸 Dreumes</button>
           <button class="fchip" onclick="setPlanFilter('Peutergroep',this)">🌱 Peuter</button>
         </div>
+        <div class="card" style="margin-bottom:12px"><div class="card-h"><h3><i class="ti ti-shield" style="color:var(--green)"></i>BKR per dag</h3></div><div class="card-b"><div id="bkr-day-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div></div></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Kind</th><th>Ma</th><th>Di</th><th>Wo</th><th>Do</th><th>Vr</th><th>Groep</th><th>Medewerker</th></tr></thead><tbody id="plan-tbody"><tr><td colspan="8"><div class="loader"><i class="ti ti-loader"></i></div></td></tr></tbody></table></div>
-        <div class="card" style="margin-top:12px"><div class="card-h"><h3><i class="ti ti-shield" style="color:var(--green)"></i>BKR per dag</h3></div><div class="card-b"><div id="bkr-day-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div></div></div>
+        <div id="plan-toon-meer" style="display:none;text-align:center;padding:10px"><button class="btn btn-outline btn-sm" onclick="toonMeerPlanning()"><i class="ti ti-chevrons-down"></i><span id="plan-meer-label">Toon meer</span></button></div>
       </div>
 
       <!-- ═══ OBSERVATIES ═══ -->
@@ -871,6 +885,7 @@ a{color:inherit;text-decoration:none}
           <button class="fchip" onclick="setObsFilter('done',this)">✅ Afgerond</button>
         </div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Kind</th><th>Geboortedatum</th><th>Groep</th><th>Laatste observatie</th><th>Volgende observatie</th><th>Status</th><th>Medewerker</th><th>✓</th></tr></thead><tbody id="obs-tbody"><tr><td colspan="8"><div class="loader"><i class="ti ti-loader"></i></div></td></tr></tbody></table></div>
+        <div id="obs-toon-meer" style="display:none;text-align:center;padding:10px"><button class="btn btn-outline btn-sm" onclick="toonMeerObs()"><i class="ti ti-chevrons-down"></i><span id="obs-meer-label">Toon meer</span></button></div>
       </div>
 
       <!-- ═══ WERKROOSTER ═══ -->
@@ -1456,6 +1471,10 @@ async function loadPlanning() {
       </tr>`;
     }).join('') || `<tr><td colspan="8"><div class="empty"><i class="ti ti-users-group"></i><h3>Geen kinderen gevonden</h3></div></td></tr>`;
 
+    // Reset limit op verse data
+    planVisibleMax = calcVisibleRows(250);
+    applyPlanningLimit();
+
     // BKR per dag
     const bkrGrid = document.getElementById('bkr-day-grid');
     if (bkrGrid) {
@@ -1468,6 +1487,56 @@ async function loadPlanning() {
       }).join('');
     }
   } catch (e) { console.error(e); }
+}
+
+// Bereken hoeveel tabelrijen passen op het scherm
+function calcVisibleRows(reservedPx) {
+  const topbar = 60;
+  const bottomNav = window.innerWidth < 640 ? 72 : 0;
+  const pad = window.innerWidth < 640 ? 20 : 40;
+  const available = window.innerHeight - topbar - bottomNav - pad - (reservedPx || 0);
+  return Math.max(5, Math.floor(available / 52));
+}
+
+let planVisibleMax = 99999;
+let obsVisibleMax  = 99999;
+
+function applyPlanningLimit() {
+  const rows = document.querySelectorAll('#plan-tbody tr[data-name]');
+  let hidden = 0;
+  rows.forEach((r, i) => {
+    if (i >= planVisibleMax) { r.style.display='none'; hidden++; }
+  });
+  const btn = document.getElementById('plan-toon-meer');
+  const lbl = document.getElementById('plan-meer-label');
+  if (btn) {
+    btn.style.display = hidden > 0 ? 'block' : 'none';
+    if (lbl) lbl.textContent = `Toon ${hidden} meer`;
+  }
+}
+
+function toonMeerPlanning() {
+  planVisibleMax += calcVisibleRows(250);
+  applyPlanningLimit();
+}
+
+function applyObsLimit() {
+  const rows = document.querySelectorAll('#obs-tbody tr');
+  let hidden = 0;
+  rows.forEach((r, i) => {
+    if (i >= obsVisibleMax) { r.style.display='none'; hidden++; }
+  });
+  const btn = document.getElementById('obs-toon-meer');
+  const lbl = document.getElementById('obs-meer-label');
+  if (btn) {
+    btn.style.display = hidden > 0 ? 'block' : 'none';
+    if (lbl) lbl.textContent = `Toon ${hidden} meer`;
+  }
+}
+
+function toonMeerObs() {
+  obsVisibleMax += calcVisibleRows(280);
+  applyObsLimit();
 }
 function filterPlan(q) { document.querySelectorAll('#plan-tbody tr').forEach(r => { r.style.display = r.dataset.name && r.dataset.name.includes(q.toLowerCase()) ? '' : 'none'; }); }
 function setPlanFilter(g, btn) { planFilter=g; document.querySelectorAll('#view-planning .fchip').forEach(c=>c.classList.remove('on')); btn.classList.add('on'); loadPlanning(); }
@@ -1484,6 +1553,7 @@ function renderObs() {
   if (!tbody) return;
   let list = obsFilter==='all' ? allObs : allObs.filter(c=>c.obs_status===obsFilter);
   if (!list.length) { tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><i class="ti ti-clipboard-off"></i><h3>Geen observaties gevonden</h3></div></td></tr>`; return; }
+  obsVisibleMax = calcVisibleRows(280);
   tbody.innerHTML = list.map(ch => {
     const st = ch.obs_status; const isDone = st==='done';
     const grpBadge = ch.group_name==='Babygroep'?'b-green':ch.group_name==='Dreumesgroep'?'b-violet':'b-blue';
@@ -1512,7 +1582,19 @@ async function toggleObs(childId, wasDone, el) {
 }
 function setObsFilter(f,btn) { obsFilter=f; document.querySelectorAll('#view-observaties .fchip').forEach(c=>c.classList.remove('on')); btn.classList.add('on'); renderObs(); }
 function filterObs(q) { document.querySelectorAll('#obs-tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'}); }
-async function exportObs() { window.open(API+'/observations/export', '_blank'); toast('CSV exporteren gestart...'); }
+async function exportObs() {
+  try {
+    const r = await fetch(API+'/observations/export', {headers:{'Authorization':`Bearer ${token}`}});
+    if (!r.ok) { toast('Export mislukt'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`observaties_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Observaties geëxporteerd! ✓');
+  } catch(e){ toast('Export fout: '+e.message); }
+}
 
 // OBS MODAL
 function openObsModal() {
@@ -2037,7 +2119,25 @@ async function addTour(){
   if(!date||!time){toast('Datum en tijd vereist');return;}
   try{await api('POST','/tours',{contact_id:parseInt(document.getElementById('tour-contact')?.value)||null,tour_date:date,tour_time:time,guide_id:parseInt(document.getElementById('tour-guide')?.value)||currentUser.id,attendees:parseInt(document.getElementById('tour-att')?.value)||2,notes:document.getElementById('tour-notes')?.value});closeModal('modal-add-tour');toast('Rondleiding gepland!');loadContacten();}catch(e){toast('Fout: '+e.message);}
 }
-function exportCSV(type){ toast('Export wordt voorbereid...'); }
+function exportCSV(type) {
+  if (type === 'planning') {
+    if (!allChildren || !allChildren.length) { toast('Laad eerst de planning'); return; }
+    const rows = [['Kind','Geboortedatum','Groep','Ma','Di','Wo','Do','Vr','Medewerker','Contact','Telefoon']];
+    allChildren.forEach(ch => {
+      const days = Array.isArray(ch.days) ? ch.days : [0,0,0,0,0];
+      rows.push([ch.name, ch.dob||'', ch.group_name, ...days.map(d=>d?'Ja':''), ch.leidster_name||'', ch.contact_name||'', ch.contact_phone||'']);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('
+');
+    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`kinderplanning_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Planning geëxporteerd! ✓');
+  }
+}
 
 function exportRoosterPDF(){
   // Zet print-week-label
@@ -2221,6 +2321,8 @@ document.addEventListener('DOMContentLoaded', () => {
   calcBKR();
   window.addEventListener('resize', () => {
     if (document.getElementById('view-werkrooster').classList.contains('on')) loadRooster();
+    if (document.getElementById('view-planning').classList.contains('on')) applyPlanningLimit();
+    if (document.getElementById('view-observaties').classList.contains('on')) applyObsLimit();
   });
 
   // Drag-drop upload
