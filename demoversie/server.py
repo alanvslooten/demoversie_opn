@@ -213,6 +213,19 @@ def init_db():
         user_id INTEGER REFERENCES users(id),
         action TEXT NOT NULL, details TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS child_day_overrides(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        child_id INTEGER NOT NULL REFERENCES children(id),
+        override_date TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK(kind IN ('extra','absent')),
+        notes TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(child_id, override_date));
+    CREATE TABLE IF NOT EXISTS app_settings(
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
     ''')
 
     if cur.execute("SELECT value FROM db_meta WHERE key='seeded_v3'").fetchone():
@@ -257,7 +270,6 @@ def init_db():
         row = cur.execute('SELECT id FROM users WHERE email=?',(email,)).fetchone()
         if row: staff_ids[email] = row[0]
     # Staff medewerkers (geen admin)
-    medewerkers = [staff_ids[e] for _,e,*_ in staff_data if _[1]=='staff']  # alle non-admin
     medewerkers = [v for k,v in staff_ids.items() if k != 'beheerder@kdv.nl']
 
     # ── 60 GEZINNEN → 80 KINDEREN ──
@@ -269,7 +281,7 @@ def init_db():
     voornamen_v = ['Emma','Sophie','Olivia','Mia','Zoë','Noor','Julia','Anna','Eva','Fleur',
                    'Lisa','Femke','Lena','Nina','Amy','Sara','Fien','Vera','Iris','Hanna',
                    'Roos','Ines','Lotte','Jade','Nora','Tess','Wren','Lore','Maud','Elise',
-                   'Lies','Amber','Faye','Silke','Lina','Hilde','Floor','Roos','Eline','Sofie']
+                   'Lies','Amber','Faye','Silke','Lina','Hilde','Floor','Saar','Eline','Sofie']
     achternamen = ['de Jong','Bakker','van den Berg','Smit','Visser','de Boer','Janssen',
                    'de Wit','Mulder','Hendriks','Pietersen','de Graaf','Vermeer','van Dam',
                    'Willems','Claassen','de Vries','Jansen','Peeters','Hoekstra','Brouwer',
@@ -290,19 +302,19 @@ def init_db():
         return f'06-{(10000000+i*7919)%90000000+10000000}'
 
     def rand_days():
-        opts = [[1,1,0,1,0],[1,0,1,0,1],[0,1,1,1,0],[1,1,1,0,0],[0,0,1,1,1],
-                [1,0,1,1,0],[1,1,0,0,1],[0,1,0,1,1],[1,0,0,1,1],[1,1,1,1,0]]
+        # Conservatieve patronen: gemiddeld ~2.5 dagen/week → past binnen 12 per groep per dag
+        opts = [[1,0,1,0,0],[0,1,0,1,0],[1,1,0,0,0],[0,0,1,1,0],[0,1,0,0,1],
+                [1,0,0,1,0],[0,0,0,1,1],[1,1,1,0,0],[0,1,1,0,0],[1,0,1,0,1]]
         return json.dumps(opts[random.randint(0,len(opts)-1)])
 
-    # Groepen en kleuren
+    # Groepen en kleuren — KDV met 2 groepen × max 12 kinderen/dag = capaciteit 24/dag
     GROEPEN = [
-        ('Babygroep',    '#22c55e',  3, 11),   # (naam, kleur, min_mnd, max_mnd)
-        ('Dreumesgroep', '#8b5cf6',  12, 23),
-        ('Peutergroep',  '#1d9bf0',  24, 47),
-        ('BSO',          '#f97316',  48, 144),
+        ('Babygroep',    '#22c55e',  3, 23),   # 0-2 jaar (combineert voorheen Baby + Dreumes)
+        ('Peutergroep',  '#1d9bf0',  24, 47),  # 2-4 jaar
     ]
-    # Verdeling: 18 baby, 22 dreumes, 25 peuter, 15 bso = 80
-    groep_counts = {'Babygroep':18,'Dreumesgroep':22,'Peutergroep':25,'BSO':15}
+    # 16 baby + 16 peuter = 32 ingeschreven. Bij gem. 2.5 dagen/wk → ~8/dag/groep
+    groep_counts = {'Babygroep':16,'Peutergroep':16}
+    TOTAL_KIDS = sum(groep_counts.values())
 
     # Genereer 60 gezinnen
     families = []
@@ -326,7 +338,7 @@ def init_db():
     for fi, fam in enumerate(families):
         n_kids = 2 if fam['has_second'] else 1
         for ki in range(n_kids):
-            if kind_idx >= 80: break
+            if kind_idx >= TOTAL_KIDS: break
             g,col,mn,mx = groep_list[kind_idx]
             # Kies voornaam (wissel m/v)
             is_v = (kind_idx + ki) % 2 == 0
@@ -355,7 +367,7 @@ def init_db():
             VALUES(?,?,?,?,?,?,?,?)""",
             (ch['name'],ch['dob'],ch['group'],ch['color'],ch['leidster'],ch['days'],ch['contact'],ch['tel']))
 
-    # ── OBSERVATIES (voor alle 80 kinderen) ──
+    # ── OBSERVATIES (voor alle kinderen) ──
     all_kids = cur.execute('SELECT id,assigned_leidster_id FROM children WHERE active=1').fetchall()
     obs_templates = [
         'Ontwikkeling verloopt goed. Motoriek en taalontwikkeling zijn leeftijdsadequaat. Kind toont positieve gehechtheid aan vaste leidsters en zoekt contact met groepsgenoten. Eetpatroon is stabiel.',
@@ -410,8 +422,12 @@ def init_db():
     for u,lt,fd,td,d,n in leave_data:
         cur.execute('INSERT INTO leave_requests(user_id,leave_type,from_date,to_date,days,notes)VALUES(?,?,?,?,?,?)',(u,lt,fd,td,d,n))
 
-    # ── BESCHIKBAARHEID WEKEN 20-45 ──
+    # ── BESCHIKBAARHEID — dynamisch rondom huidige week ──
+    # Vroeger: vaste weken 20-45. Probleem: auto-rooster werkte niet buiten dat venster.
+    # Nu: dek minstens huidige week + 12 vooruit, plus de hele "schoolperiode" (week 4 t/m 50).
     yr = today.year
+    cur_week = today.isocalendar()[1]
+    week_range = sorted(set(list(range(max(1, cur_week - 2), cur_week + 13)) + list(range(4, 51))))
     av_patterns = {
         staff_ids['lisa@kdv.nl']:  [(0,'ochtend'),(0,'middag'),(1,'ochtend'),(3,'ochtend'),(3,'middag'),(4,'ochtend'),(4,'middag')],
         staff_ids['sarah@kdv.nl']: [(0,'middag'),(1,'ochtend'),(1,'middag'),(2,'middag'),(3,'ochtend')],
@@ -425,7 +441,7 @@ def init_db():
         staff_ids['erik@kdv.nl']:  [(1,'ochtend'),(2,'ochtend'),(2,'middag'),(3,'middag')],
     }
     for uid_av, slots in av_patterns.items():
-        for wk in range(20, 46):
+        for wk in week_range:
             for dow,sess in slots:
                 cur.execute('INSERT OR IGNORE INTO weekly_availability(user_id,week_number,year,day_of_week,session)VALUES(?,?,?,?,?)',(uid_av,wk,yr,dow,sess))
 
@@ -441,11 +457,10 @@ def init_db():
         list_type = 'intern' if i in [1,4,8,12,17] else 'extern'
         status = 'voorstel_verstuurd' if i in [3,7,14] else 'wachtend'
         deadline = rdate(7+i) if status=='voorstel_verstuurd' else None
-        # Leeftijd: mix van groepen
-        if i < 7:    age_mnd = random.randint(2,10);  opvang='KDV'
-        elif i < 14: age_mnd = random.randint(13,22); opvang='KDV'
-        elif i < 21: age_mnd = random.randint(25,46); opvang='KDV'
-        else:        age_mnd = random.randint(50,120);opvang='BSO'
+        # Leeftijd: mix van twee groepen (Baby 0-23 mnd, Peuter 24-47 mnd)
+        if i < 10:   age_mnd = random.randint(2,11);  opvang='KDV'   # Babygroep — jong
+        elif i < 18: age_mnd = random.randint(12,23); opvang='KDV'   # Babygroep — ouder
+        else:        age_mnd = random.randint(24,42); opvang='KDV'   # Peutergroep
         days_opts = [[1,1,0,1,0],[1,0,1,0,1],[0,1,1,0,1],[1,1,1,0,0],[0,0,1,1,1]]
         days = json.dumps(days_opts[i%len(days_opts)])
         start_offset = random.randint(30,365)
@@ -473,7 +488,7 @@ def init_db():
         ('D. Hoeven','d.hoeven@werk.nl','06-33344455','niet_ingeschreven',None,'Open dag bezocht, oriënterend.'),
         ('L. Gerritsen','l.gerritsen@mail.nl','06-66677788','wachtlijst',12,'Urgente aanvraag, huidige opvang sluit.'),
         ('K. van Beek','k.vanbeek@mail.nl','06-88877766','niet_ingeschreven',None,'Doorgestuurd via huisarts.'),
-        ('Fam. Nijs','nijs@email.nl','06-44455566','wachtlijst',17,'Interesse in BSO.'),
+        ('Fam. Nijs','nijs@email.nl','06-44455566','wachtlijst',17,'Interesse in Peutergroep.'),
     ]
     for co in contact_data:
         cur.execute('INSERT INTO contacts(name,email,phone,status,waitlist_id,notes)VALUES(?,?,?,?,?,?)',co)
@@ -486,7 +501,7 @@ def init_db():
         (3, rdate(-7), '11:00',1,'no-show',   'Niet verschenen, opvolging nodig.'),
         (4, rdate(-3), '10:30',2,'geweest',   'Rondleiding soepel verlopen.'),
         (5, rdate(2),  '09:30',1,'gepland',   'Eerste kennismaking Babygroep.'),
-        (6, rdate(5),  '14:00',2,'gepland',   'Twee ouders verwacht, BSO-interesse.'),
+        (6, rdate(5),  '14:00',2,'gepland',   'Twee ouders verwacht, Peuter-interesse.'),
         (7, rdate(9),  '10:00',3,'gepland',   'Open dag deelnemers, drie gezinnen.'),
         (8, rdate(14), '11:30',1,'gepland',   'Urgente aanvraag — zo snel mogelijk bekijken.'),
     ]:
@@ -508,7 +523,13 @@ def init_db():
         cur.execute('INSERT INTO activity_log(user_id,action,details)VALUES(?,?,?)',(uid_l,action,details))
 
     cur.execute("INSERT INTO db_meta(key,value)VALUES('seeded_v3','1')")
-    c.commit(); c.close(); print('✓ Database v3 initialized — 80 kinderen, 12 medewerkers, 25 wachtlijst')
+    c.commit()
+    # Tel daadwerkelijke records voor een eerlijk bootbericht
+    n_kids   = c.execute('SELECT COUNT(*) FROM children WHERE active=1').fetchone()[0]
+    n_staff  = c.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    n_wl     = c.execute('SELECT COUNT(*) FROM waitlist').fetchone()[0]
+    c.close()
+    print(f'✓ Database v3 initialized — {n_kids} kinderen (2 groepen × max 12/dag), {n_staff} medewerkers, {n_wl} wachtlijst')
 
 # ══════════════════════════════
 # AUTH
@@ -586,22 +607,37 @@ def search():
 @app.route('/api/dashboard')
 @require_auth
 def dashboard():
-    c=get_db(); today=date.today().isoformat(); dow=date.today().weekday()
+    c=get_db(); today=date.today(); today_iso=today.isoformat(); dow=today.weekday()
     total_children = c.execute('SELECT COUNT(*) FROM children WHERE active=1').fetchone()[0]
-    ch_rows = c.execute('SELECT days FROM children WHERE active=1').fetchall()
+    ch_rows = c.execute('SELECT id,days FROM children WHERE active=1').fetchall()
     today_children = sum(1 for r in ch_rows if json.loads(r['days'])[dow])
-    staff_today = c.execute('SELECT COUNT(*) FROM shifts WHERE shift_date=? AND shift_type="werk"',(today,)).fetchone()[0]
+    staff_today = c.execute('SELECT COUNT(*) FROM shifts WHERE shift_date=? AND shift_type="werk"',(today_iso,)).fetchone()[0]
     pending_leave = c.execute('SELECT COUNT(*) FROM leave_requests WHERE status="pending"').fetchone()[0]
     wl_total = c.execute('SELECT COUNT(*) FROM waitlist WHERE status NOT IN ("geplaatst","afgewezen")').fetchone()[0]
     wl_proposals = c.execute('SELECT COUNT(*) FROM waitlist WHERE status="voorstel_verstuurd"').fetchone()[0]
-    children = c.execute('SELECT id FROM children WHERE active=1').fetchall()
+    # Observatie-status: één geaggregeerde query i.p.v. N+1
+    latest_obs = c.execute('''
+        SELECT child_id, MAX(obs_date) as last_date, next_due
+        FROM observations
+        GROUP BY child_id
+    ''').fetchall()
+    obs_map = {r['child_id']: r for r in latest_obs}
     obs_needed=obs_overdue=obs_done=0
-    for ch in children:
-        s,_,_ = calc_obs_status(ch['id'],c)
-        if s=='overdue': obs_overdue+=1
-        elif s=='needed': obs_needed+=1
-        else: obs_done+=1
-    tours_upcoming = c.execute("SELECT COUNT(*) FROM tours WHERE tour_date>=? AND status='gepland'",(today,)).fetchone()[0]
+    for ch in ch_rows:
+        rec = obs_map.get(ch['id'])
+        if not rec:
+            obs_overdue += 1; continue
+        nd = rec['next_due']
+        if not nd:
+            obs_done += 1; continue
+        try:
+            due = datetime.strptime(nd, '%Y-%m-%d').date()
+            diff = (due - today).days
+            if diff < 0: obs_overdue += 1
+            elif diff <= 30: obs_needed += 1
+            else: obs_done += 1
+        except: obs_done += 1
+    tours_upcoming = c.execute("SELECT COUNT(*) FROM tours WHERE tour_date>=? AND status='gepland'",(today_iso,)).fetchone()[0]
     activities = c.execute('SELECT al.*,u.name as user_name,u.color FROM activity_log al LEFT JOIN users u ON al.user_id=u.id ORDER BY al.created_at DESC LIMIT 8').fetchall()
     c.close()
     return jsonify({'total_children':total_children,'today_children':today_children,'staff_today':staff_today,'pending_leave':pending_leave,'wl_total':wl_total,'wl_proposals':wl_proposals,'obs_needed':obs_needed,'obs_overdue':obs_overdue,'obs_done':obs_done,'tours_upcoming':tours_upcoming,'activities':[dict(a) for a in activities]})
@@ -653,6 +689,131 @@ def assign_child(cid):
     d=request.get_json(); c=get_db()
     c.execute('UPDATE children SET assigned_leidster_id=? WHERE id=?',(d.get('leidster_id'),cid))
     c.commit(); c.close(); log_action(request.user['id'],'Kind toegewezen',''); return jsonify({'message':'OK'})
+
+@app.route('/api/children/<int:cid>', methods=['PATCH'])
+@require_auth
+def update_child(cid):
+    """Generieke update — naam, geboortedatum, groep, vaste dagen, contactgegevens, notities."""
+    d=request.get_json() or {}
+    c=get_db()
+    fields=[]; vals=[]
+    allowed=['name','dob','group_name','group_color','assigned_leidster_id','contact_name','contact_phone','notes']
+    for f in allowed:
+        if f in d: fields.append(f'{f}=?'); vals.append(d[f])
+    if 'days' in d:
+        fields.append('days=?'); vals.append(json.dumps(d['days']) if isinstance(d['days'],list) else d['days'])
+    if not fields:
+        c.close(); return jsonify({'error':'Geen velden om bij te werken'}),400
+    vals.append(cid)
+    c.execute(f'UPDATE children SET {",".join(fields)} WHERE id=?',vals)
+    ch=c.execute('SELECT name FROM children WHERE id=?',(cid,)).fetchone()
+    c.commit(); c.close()
+    log_action(request.user['id'],'Kind bijgewerkt',ch['name'] if ch else f'id={cid}')
+    return jsonify({'message':'Bijgewerkt'})
+
+@app.route('/api/children/<int:cid>', methods=['DELETE'])
+@require_admin
+def deactivate_child(cid):
+    c=get_db()
+    ch=c.execute('SELECT name FROM children WHERE id=?',(cid,)).fetchone()
+    c.execute('UPDATE children SET active=0 WHERE id=?',(cid,))
+    c.commit(); c.close()
+    log_action(request.user['id'],'Kind gedeactiveerd',ch['name'] if ch else f'id={cid}')
+    return jsonify({'message':'Gedeactiveerd'})
+
+# ══════════════════════════════
+# CHILD DAY OVERRIDES
+# ══════════════════════════════
+@app.route('/api/children/<int:cid>/overrides', methods=['GET'])
+@require_auth
+def get_child_overrides(cid):
+    fr=request.args.get('from'); to=request.args.get('to')
+    c=get_db()
+    q='SELECT * FROM child_day_overrides WHERE child_id=?'; p=[cid]
+    if fr: q+=' AND override_date>=?'; p.append(fr)
+    if to: q+=' AND override_date<=?'; p.append(to)
+    q+=' ORDER BY override_date'
+    rows=c.execute(q,p).fetchall(); c.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/children/<int:cid>/overrides', methods=['POST'])
+@require_auth
+def add_child_override(cid):
+    """Boek een extra dag, of zeg een vaste dag af. kind = 'extra' | 'absent'."""
+    d=request.get_json() or {}
+    kind=d.get('kind')
+    if kind not in ('extra','absent'): return jsonify({'error':"kind moet 'extra' of 'absent' zijn"}),400
+    od=d.get('override_date')
+    if not od: return jsonify({'error':'override_date verplicht'}),400
+    c=get_db()
+    try:
+        cur=c.execute('INSERT INTO child_day_overrides(child_id,override_date,kind,notes,created_by)VALUES(?,?,?,?,?)',
+                      (cid,od,kind,d.get('notes'),request.user['id']))
+        oid=cur.lastrowid
+    except sqlite3.IntegrityError:
+        # Bestaat al — overschrijf
+        c.execute('UPDATE child_day_overrides SET kind=?,notes=?,created_by=?,created_at=CURRENT_TIMESTAMP WHERE child_id=? AND override_date=?',
+                  (kind,d.get('notes'),request.user['id'],cid,od))
+        oid=c.execute('SELECT id FROM child_day_overrides WHERE child_id=? AND override_date=?',(cid,od)).fetchone()['id']
+    ch=c.execute('SELECT name FROM children WHERE id=?',(cid,)).fetchone()
+    c.commit(); c.close()
+    log_action(request.user['id'],'Dagwijziging kind',f'{ch["name"] if ch else cid} — {od} ({kind})')
+    return jsonify({'id':oid}),201
+
+@app.route('/api/children/overrides/<int:oid>', methods=['DELETE'])
+@require_auth
+def delete_child_override(oid):
+    c=get_db()
+    c.execute('DELETE FROM child_day_overrides WHERE id=?',(oid,))
+    c.commit(); c.close()
+    return jsonify({'message':'Verwijderd'})
+
+# ══════════════════════════════
+# PLANNING (kinderen per week, met overrides toegepast)
+# ══════════════════════════════
+@app.route('/api/planning')
+@require_auth
+def get_planning():
+    """Geeft alle kinderen terug met hun effectieve dagen voor één specifieke week.
+    Query: ?week_start=YYYY-MM-DD (maandag van de week). Default = huidige week."""
+    ws=request.args.get('week_start')
+    if ws:
+        wsdate=datetime.strptime(ws,'%Y-%m-%d').date()
+    else:
+        wsdate=date.today()
+    # Verschuif naar maandag
+    monday = wsdate - timedelta(days=wsdate.weekday())
+    week_dates = [(monday + timedelta(days=i)).isoformat() for i in range(5)]
+    c=get_db(); uid=request.user['id']; role=request.user['role']
+    if role=='admin':
+        rows=c.execute('SELECT ch.*,u.name as leidster_name,u.color as leidster_color,u.initials as leidster_initials FROM children ch LEFT JOIN users u ON ch.assigned_leidster_id=u.id WHERE ch.active=1 ORDER BY ch.group_name,ch.name').fetchall()
+    else:
+        rows=c.execute('SELECT ch.*,u.name as leidster_name,u.color as leidster_color,u.initials as leidster_initials FROM children ch LEFT JOIN users u ON ch.assigned_leidster_id=u.id WHERE ch.active=1 AND ch.assigned_leidster_id=? ORDER BY ch.name',(uid,)).fetchall()
+    # Alle overrides voor deze week in één query
+    ov_rows=c.execute('SELECT * FROM child_day_overrides WHERE override_date>=? AND override_date<=?',(week_dates[0],week_dates[-1])).fetchall()
+    ov_map={}
+    for ov in ov_rows:
+        ov_map.setdefault(ov['child_id'],[]).append(dict(ov))
+    result=[]
+    for r in rows:
+        d=dict(r)
+        try: d['days']=json.loads(d['days'])
+        except: d['days']=[0,0,0,0,0]
+        # Bouw week_days: start met fixed pattern, pas overrides toe
+        week_days=list(d['days'])
+        child_overrides=ov_map.get(d['id'],[])
+        for ov in child_overrides:
+            try:
+                ov_date=datetime.strptime(ov['override_date'],'%Y-%m-%d').date()
+                dow=ov_date.weekday()
+                if 0<=dow<=4:
+                    week_days[dow]=1 if ov['kind']=='extra' else 0
+            except: pass
+        d['week_days']=week_days
+        d['overrides']=child_overrides
+        result.append(d)
+    c.close()
+    return jsonify({'week_start':monday.isoformat(),'week_dates':week_dates,'children':result})
 
 # ══════════════════════════════
 # OBSERVATIONS
@@ -799,29 +960,87 @@ def add_shift():
         (target_uid,d['shift_date'],d.get('shift_type','werk'),d.get('start_time'),d.get('end_time'),d.get('notes')))
     sid=cur.lastrowid; c.commit(); c.close(); return jsonify({'id':sid}),201
 
+@app.route('/api/shifts/<int:sid>', methods=['PATCH'])
+@require_auth
+def update_shift(sid):
+    d=request.get_json() or {}; c=get_db()
+    sh=c.execute('SELECT * FROM shifts WHERE id=?',(sid,)).fetchone()
+    if not sh: c.close(); return jsonify({'error':'Niet gevonden'}),404
+    if request.user['role']!='admin' and sh['user_id']!=request.user['id']:
+        c.close(); return jsonify({'error':'Alleen eigen diensten bewerken'}),403
+    fields=[]; vals=[]
+    for f in ['shift_date','shift_type','start_time','end_time','notes','user_id']:
+        if f in d: fields.append(f'{f}=?'); vals.append(d[f])
+    if not fields: c.close(); return jsonify({'error':'Geen velden'}),400
+    vals.append(sid)
+    c.execute(f'UPDATE shifts SET {",".join(fields)} WHERE id=?',vals)
+    c.commit(); c.close()
+    log_action(request.user['id'],'Dienst bijgewerkt',f'id={sid}')
+    return jsonify({'message':'Bijgewerkt'})
+
+@app.route('/api/shifts/<int:sid>', methods=['DELETE'])
+@require_auth
+def delete_shift(sid):
+    c=get_db()
+    sh=c.execute('SELECT * FROM shifts WHERE id=?',(sid,)).fetchone()
+    if not sh: c.close(); return jsonify({'error':'Niet gevonden'}),404
+    if request.user['role']!='admin' and sh['user_id']!=request.user['id']:
+        c.close(); return jsonify({'error':'Alleen eigen diensten verwijderen'}),403
+    c.execute('DELETE FROM shifts WHERE id=?',(sid,))
+    c.commit(); c.close()
+    log_action(request.user['id'],'Dienst verwijderd',f'id={sid}')
+    return jsonify({'message':'Verwijderd'})
+
 @app.route('/api/shifts/auto-schedule', methods=['POST'])
 @require_admin
 def auto_schedule():
-    d=request.get_json(); ws=d.get('week_start',date.today().isoformat())
+    d=request.get_json() or {}
+    ws=d.get('week_start',date.today().isoformat())
     start=datetime.strptime(ws,'%Y-%m-%d').date()
-    yw=start.isocalendar()[:2]; yr,wk=yw
+    # Verschuiven naar maandag van die week
+    start = start - timedelta(days=start.weekday())
+    yr, wk, _ = start.isocalendar()
     c=get_db()
-    avail=c.execute('SELECT * FROM weekly_availability WHERE year=? AND week_number=?',(yr,wk)).fetchall()
+    # Stap 1: exact match week+jaar
+    avail=c.execute('SELECT user_id,day_of_week,session FROM weekly_availability WHERE year=? AND week_number=?',(yr,wk)).fetchall()
+    # Stap 2: fallback — meest recente week per user binnen het jaar
     if not avail:
-        avail=c.execute('SELECT DISTINCT user_id,day_of_week,session FROM weekly_availability WHERE year=? ORDER BY user_id,day_of_week',(yr,)).fetchall()
-    created=0
+        avail=c.execute('''
+            SELECT user_id, day_of_week, session FROM weekly_availability
+            WHERE year=? AND week_number=(
+                SELECT MAX(week_number) FROM weekly_availability w2
+                WHERE w2.user_id=weekly_availability.user_id AND w2.year=?
+            )
+        ''',(yr,yr)).fetchall()
+    # Stap 3: laatste fallback — meest recente week ooit per user
+    if not avail:
+        avail=c.execute('''
+            SELECT user_id, day_of_week, session FROM weekly_availability
+            WHERE (user_id, year, week_number) IN (
+                SELECT user_id, year, MAX(week_number) FROM weekly_availability GROUP BY user_id, year
+            )
+        ''').fetchall()
+    created=0; created_ids=[]
     for day_off in range(5):
         sd=(start+timedelta(days=day_off)).isoformat()
         for av in avail:
             if av['day_of_week']!=day_off: continue
+            # Skip als deze user al een dienst heeft op deze dag
             if c.execute('SELECT id FROM shifts WHERE user_id=? AND shift_date=?',(av['user_id'],sd)).fetchone(): continue
             st='07:30' if av['session']=='ochtend' else '12:00'
             et='13:00' if av['session']=='ochtend' else '18:30'
-            c.execute('INSERT INTO shifts(user_id,shift_date,shift_type,start_time,end_time,notes)VALUES(?,?,?,?,?,?)',(av['user_id'],sd,'werk',st,et,'Auto-gepland'))
-            created+=1
-    c.commit(); c.close()
-    log_action(request.user['id'],'Rooster auto-gegenereerd',f'{created} diensten')
-    return jsonify({'created':created,'message':f'{created} diensten ingepland'})
+            cur=c.execute('INSERT INTO shifts(user_id,shift_date,shift_type,start_time,end_time,notes)VALUES(?,?,?,?,?,?)',(av['user_id'],sd,'werk',st,et,'Auto-gepland'))
+            created_ids.append(cur.lastrowid); created+=1
+    c.commit()
+    # Haal nieuwe diensten + user info terug zodat frontend ze direct kan renderen
+    new_shifts = []
+    if created_ids:
+        placeholders = ','.join('?' for _ in created_ids)
+        rows = c.execute(f'SELECT s.*,u.name as user_name,u.color,u.initials FROM shifts s JOIN users u ON s.user_id=u.id WHERE s.id IN ({placeholders})',created_ids).fetchall()
+        new_shifts = [dict(r) for r in rows]
+    c.close()
+    log_action(request.user['id'],'Rooster auto-gegenereerd',f'{created} diensten week {wk}')
+    return jsonify({'created':created,'week':wk,'year':yr,'week_start':start.isoformat(),'shifts':new_shifts,'message':f'{created} diensten ingepland voor week {wk}'})
 
 # ══════════════════════════════
 # LEAVE
@@ -1049,6 +1268,70 @@ def bkr_calculate():
     present=d.get('present',0); half=-(-total//2)
     status='ok' if present>=total else ('three_hour_rule' if present>=half else 'violation')
     return jsonify({'required':total,'present':present,'status':status,'breakdown':breakdown})
+
+# ══════════════════════════════
+# SETTINGS (app-niveau, admin-only voor schrijven)
+# ══════════════════════════════
+SETTINGS_DEFAULTS = {
+    'kdv_name': 'KinderKompas KDV',
+    'opening_time': '07:00',
+    'closing_time': '18:30',
+    'notif_bkr': '1',
+    'notif_observation': '1',
+    'notif_leave': '1',
+    # Capaciteit: 2 groepen × 12 kinderen/dag = 24/dag totaal
+    'max_per_day': '24',
+    'max_per_group': '12',
+    'group_count': '2',
+}
+
+@app.route('/api/settings')
+@require_auth
+def get_settings():
+    c=get_db()
+    rows=c.execute('SELECT key,value FROM app_settings').fetchall()
+    out=dict(SETTINGS_DEFAULTS)
+    for r in rows: out[r['key']]=r['value']
+    c.close()
+    return jsonify(out)
+
+@app.route('/api/settings', methods=['PATCH'])
+@require_admin
+def update_settings():
+    d=request.get_json() or {}
+    c=get_db()
+    for k,v in d.items():
+        # Whitelist
+        if k not in SETTINGS_DEFAULTS: continue
+        c.execute('INSERT INTO app_settings(key,value,updated_at)VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=CURRENT_TIMESTAMP',(k,str(v)))
+    c.commit(); c.close()
+    log_action(request.user['id'],'Instellingen bijgewerkt',', '.join(d.keys()))
+    return jsonify({'message':'Opgeslagen'})
+
+# ══════════════════════════════
+# PROFILE — eigen gegevens bijwerken
+# ══════════════════════════════
+@app.route('/api/profile', methods=['PATCH'])
+@require_auth
+def update_profile():
+    d=request.get_json() or {}
+    uid=request.user['id']
+    c=get_db()
+    fields=[]; vals=[]
+    for f in ['name','color']:
+        if f in d: fields.append(f'{f}=?'); vals.append(d[f])
+    if 'name' in d:
+        inits=''.join(w[0].upper() for w in d['name'].split()[:2])
+        fields.append('initials=?'); vals.append(inits)
+    if 'password' in d and d['password']:
+        ph=hashlib.sha256(f'{d["password"]}{SECRET}'.encode()).hexdigest()
+        fields.append('password_hash=?'); vals.append(ph)
+    if not fields: c.close(); return jsonify({'error':'Geen wijzigingen'}),400
+    vals.append(uid)
+    c.execute(f'UPDATE users SET {",".join(fields)} WHERE id=?',vals)
+    c.commit(); c.close()
+    log_action(uid,'Profiel bijgewerkt','')
+    return jsonify({'message':'Profiel bijgewerkt'})
 
 init_db()
 
