@@ -721,7 +721,10 @@ a{color:inherit;text-decoration:none}
 @media(max-width:430px){
   /* iPhone 14/15 Plus, Pro Max, Galaxy S Ultra */
   .stats{grid-template-columns:1fr 1fr}
-  .page-banner{display:none}
+  .page-banner{height:84px;border-radius:var(--r)}
+  .page-banner-text h1{font-size:15px;margin-bottom:2px}
+  .page-banner-text p{font-size:10px}
+  .page-banner-overlay{padding:12px 16px}
   .tabs{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
   .login-left{min-height:150px;flex:none}
   .login-right{width:100%;padding:18px}
@@ -735,6 +738,131 @@ a{color:inherit;text-decoration:none}
   .topbar{padding:0 8px;gap:5px}
   .btn-xs{padding:4px 7px;font-size:9px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   ── KK V3 ADDITIONS — banner-animatie, fixed dashboard, overrides, etc.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Banner: krimpt en vervaagt wanneer .page gescrolld wordt */
+.page-banner{transition:height .42s cubic-bezier(.4,0,.2,1), margin-bottom .42s cubic-bezier(.4,0,.2,1), box-shadow .3s}
+.page-banner img{transition:filter .42s, transform .42s cubic-bezier(.4,0,.2,1)}
+.page-banner-text h1{transition:font-size .42s cubic-bezier(.4,0,.2,1), margin-bottom .3s}
+.page-banner-text p{transition:opacity .3s ease, max-height .42s cubic-bezier(.4,0,.2,1), margin-top .3s;max-height:32px;overflow:hidden}
+.page-banner-overlay{transition:padding .42s cubic-bezier(.4,0,.2,1)}
+
+.page.scrolled .page-banner{height:58px;margin-bottom:12px;box-shadow:0 6px 22px rgba(0,0,0,.32)}
+.page.scrolled .page-banner img{filter:brightness(.22) saturate(.4) blur(3px);transform:scale(1.08)}
+.page.scrolled .page-banner-text h1{font-size:14px;margin-bottom:0;letter-spacing:.15px}
+.page.scrolled .page-banner-text h1 i{display:none}
+.page.scrolled .page-banner-text p{opacity:0;max-height:0;margin-top:0}
+.page.scrolled .page-banner-overlay{padding:10px 22px}
+
+/* Dashboard: alles in 1 scherm, geen scroll */
+#view-dashboard.dash-fit{display:flex;flex-direction:column;height:100%;min-height:0}
+#view-dashboard.dash-fit .page-banner{height:84px;flex-shrink:0;margin-bottom:12px}
+#view-dashboard.dash-fit .page-banner-text h1{font-size:18px}
+#view-dashboard.dash-fit .stats{margin-bottom:12px;flex-shrink:0}
+#view-dashboard.dash-fit .stats .sc{padding:11px 13px}
+#view-dashboard.dash-fit .stats .sc-icon{width:28px;height:28px;font-size:14px;margin-bottom:7px}
+#view-dashboard.dash-fit .stats .sc-num{font-size:22px}
+#view-dashboard.dash-fit .stats .sc-lbl{font-size:9px}
+#view-dashboard.dash-fit .stats .sc-sub{font-size:9px;margin-top:3px}
+#view-dashboard.dash-fit .dash-main{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;flex:1;min-height:0}
+#view-dashboard.dash-fit .dash-main .card{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#view-dashboard.dash-fit .dash-main .card-b{flex:1;overflow-y:auto;min-height:0}
+#view-dashboard.dash-fit .dash-col{display:flex;flex-direction:column;gap:12px;min-height:0}
+#view-dashboard.dash-fit .dash-col .card{flex:1;min-height:0}
+
+/* Op tablet: 2 kolommen, op mobiel terug naar scroll */
+@media(max-width:1100px){
+  #view-dashboard.dash-fit .dash-main{grid-template-columns:1fr 1fr}
+}
+@media(max-width:639px){
+  #view-dashboard.dash-fit{height:auto;display:block}
+  #view-dashboard.dash-fit .dash-main{grid-template-columns:1fr;height:auto}
+  #view-dashboard.dash-fit .dash-main .card{min-height:200px}
+  #view-dashboard.dash-fit .dash-main .card-b{overflow:visible}
+}
+
+/* Planning cells — klikbaar met override staten */
+.plan-cell{
+  width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;cursor:pointer;transition:.16s ease;border:1.5px solid transparent;
+  user-select:none;position:relative;
+}
+.plan-cell:hover{transform:scale(1.08)}
+.plan-cell.fixed{background:var(--prim-l);color:var(--primary);border-color:rgba(99,102,241,.28)}
+.plan-cell.extra{background:var(--green-l);color:var(--green);border-color:var(--green);box-shadow:0 0 0 2px rgba(34,197,94,.15)}
+.plan-cell.extra::after{content:'+';position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--green);color:#fff;border-radius:50%;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
+.plan-cell.absent{background:rgba(239,68,68,.08);color:var(--red);border-color:rgba(239,68,68,.4);text-decoration:line-through}
+.plan-cell.empty{background:transparent;color:var(--text3);border-color:var(--border2)}
+.plan-cell.empty:hover{background:var(--prim-gl);color:var(--primary);border-color:var(--primary)}
+.tbl td.plan-td{text-align:center;padding:6px}
+
+/* Planning legend */
+.plan-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px 14px;background:var(--surface);border-radius:var(--r-sm);border:1px solid var(--border)}
+.plan-legend-item{display:flex;align-items:center;gap:6px}
+.plan-legend-dot{width:14px;height:14px;border-radius:5px;border:1.5px solid transparent}
+.plan-legend-dot.fixed{background:var(--prim-l);border-color:rgba(99,102,241,.28)}
+.plan-legend-dot.extra{background:var(--green-l);border-color:var(--green)}
+.plan-legend-dot.absent{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.4)}
+
+/* BKR normen — gestructureerd blok ipv lange alert */
+.bkr-norms{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.bkr-norm-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.bkr-norm-card h4{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.bkr-norm-card h4 i{font-size:13px;color:var(--primary)}
+.bkr-norm-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.bkr-norm-row span:first-child{color:var(--text2)}
+.bkr-norm-row span:last-child{font-weight:700;color:var(--text)}
+.bkr-norm-card.wide{grid-column:span 2}
+.bkr-norm-card p{font-size:11px;color:var(--text2);line-height:1.55}
+@media(max-width:900px){.bkr-norms{grid-template-columns:1fr 1fr}.bkr-norm-card.wide{grid-column:span 2}}
+@media(max-width:639px){.bkr-norms{grid-template-columns:1fr}.bkr-norm-card.wide{grid-column:span 1}}
+
+/* Auto-rooster preview in Beschikbaarheid */
+.auto-preview{background:var(--surface);border:1px solid var(--green);border-radius:var(--r);padding:14px 16px;margin-top:12px;animation:slideDown .3s ease}
+.auto-preview-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.auto-preview-h h4{font-size:13px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:7px}
+.auto-preview-list{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:240px;overflow-y:auto}
+.auto-preview-day{background:var(--bg);border-radius:var(--r-sm);padding:8px;min-height:80px}
+.auto-preview-day-h{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px;text-align:center}
+.auto-shift{background:var(--prim-l);color:var(--primary);border-radius:6px;padding:4px 6px;font-size:10px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.auto-shift .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* Shift edit affordances in werkrooster */
+.sched-shift{position:relative;cursor:pointer;transition:.15s}
+.sched-shift:hover{box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.sched-shift .shift-actions{position:absolute;top:3px;right:3px;display:none;gap:2px}
+.sched-shift:hover .shift-actions{display:flex}
+.shift-act-btn{background:rgba(0,0,0,.55);color:#fff;border:none;width:18px;height:18px;border-radius:5px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0}
+.shift-act-btn:hover{background:var(--primary)}
+.shift-act-btn.danger:hover{background:var(--red)}
+
+/* Settings restructure */
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:800px){.set-grid{grid-template-columns:1fr}}
+.setting-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:0}
+.setting-block-h{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:13px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.setting-block-h i{font-size:16px;color:var(--primary)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.setting-row:last-child{border-bottom:none}
+.setting-row h4{font-size:12px;font-weight:600;color:var(--text)}
+.setting-row p{font-size:10px;color:var(--text3);margin-top:2px}
+.set-input{padding:7px 9px;background:var(--bg);border:1.5px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;outline:none;font-family:inherit}
+.set-input:focus{border-color:var(--primary)}
+.color-picker{display:flex;gap:5px}
+.color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.15s}
+.color-swatch.on{border-color:var(--text);transform:scale(1.1)}
+
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Edit child modal cells */
+.day-toggle-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.day-toggle{padding:9px 6px;border-radius:8px;background:var(--bg);border:1.5px solid var(--border2);text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:var(--text3);transition:.13s}
+.day-toggle.on{background:var(--prim-l);border-color:var(--primary);color:var(--primary)}
+.day-toggle:hover{border-color:var(--primary)}
+
 </style>
 </head>
 <body>
@@ -848,16 +976,16 @@ a{color:inherit;text-decoration:none}
     <div class="page">
 
       <!-- ═══ DASHBOARD ═══ -->
-      <div class="view on" id="view-dashboard">
+      <div class="view on dash-fit" id="view-dashboard">
         <div class="page-banner"><img src="https://images.unsplash.com/photo-1620805041254-b4f36c52fdcb?q=80&w=1200&auto=format&fit=crop" alt=""><div class="page-banner-overlay"><div class="page-banner-text"><h1 id="dash-greeting">Goedemorgen 👋</h1><p id="dash-date"></p></div></div></div>
         <div class="stats" id="dash-stats"><div class="loader"><i class="ti ti-loader"></i></div></div>
-        <div class="g2" style="margin-bottom:14px">
-          <div class="card" style="border-color:rgba(99,102,241,.3)">
+        <div class="dash-main">
+          <div class="card">
             <div class="card-h"><h3><i class="ti ti-list-numbers" style="color:var(--primary)"></i>Wachtlijst</h3><button class="btn btn-primary btn-sm" onclick="showView('wachtlijst')"><i class="ti ti-arrow-right"></i>Beheren</button></div>
             <div class="card-b" id="dash-wl"><div class="loader"><i class="ti ti-loader"></i></div></div>
           </div>
-          <div>
-            <div class="card" style="margin-bottom:12px">
+          <div class="dash-col">
+            <div class="card">
               <div class="card-h"><h3><i class="ti ti-clipboard-check" style="color:var(--violet)"></i>Observaties</h3><button class="btn btn-outline btn-sm" onclick="showView('observaties')">Alle</button></div>
               <div class="card-b" id="dash-obs"><div class="loader"><i class="ti ti-loader"></i></div></div>
             </div>
@@ -866,8 +994,11 @@ a{color:inherit;text-decoration:none}
               <div class="card-b" id="dash-tours"><div class="loader"><i class="ti ti-loader"></i></div></div>
             </div>
           </div>
+          <div class="card">
+            <div class="card-h"><h3><i class="ti ti-timeline" style="color:var(--pink)"></i>Recente activiteit</h3></div>
+            <div class="card-b" id="dash-activity"><div class="loader"><i class="ti ti-loader"></i></div></div>
+          </div>
         </div>
-        <div class="card"><div class="card-h"><h3><i class="ti ti-timeline" style="color:var(--pink)"></i>Recente activiteit</h3></div><div class="card-b" id="dash-activity"><div class="loader"><i class="ti ti-loader"></i></div></div></div>
       </div>
 
       <!-- ═══ KINDERPLANNING ═══ -->
@@ -878,11 +1009,16 @@ a{color:inherit;text-decoration:none}
         <div class="filters">
           <div class="search-box"><i class="ti ti-search"></i><input type="text" placeholder="Zoek kind..." oninput="filterPlan(this.value)"></div>
           <button class="fchip on" onclick="setPlanFilter('all',this)">Alle</button>
-          <button class="fchip" onclick="setPlanFilter('Babygroep',this)">🍼 Baby</button>
-          <button class="fchip" onclick="setPlanFilter('Dreumesgroep',this)">🧸 Dreumes</button>
-          <button class="fchip" onclick="setPlanFilter('Peutergroep',this)">🌱 Peuter</button>
+          <button class="fchip" onclick="setPlanFilter('Babygroep',this)">🍼 Babygroep</button>
+          <button class="fchip" onclick="setPlanFilter('Peutergroep',this)">🌱 Peutergroep</button>
         </div>
         <div class="card" style="margin-bottom:12px"><div class="card-h"><h3><i class="ti ti-shield" style="color:var(--green)"></i>BKR per dag</h3></div><div class="card-b"><div id="bkr-day-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px"></div></div></div>
+        <div class="plan-legend">
+          <div class="plan-legend-item"><div class="plan-legend-dot fixed"></div>Vaste dag</div>
+          <div class="plan-legend-item"><div class="plan-legend-dot extra"></div>Extra geboekt</div>
+          <div class="plan-legend-item"><div class="plan-legend-dot absent"></div>Afgemeld</div>
+          <span style="margin-left:auto;color:var(--text3);font-size:10px">Klik op een cel om een dag voor deze week te wijzigen · klik op een naam om vaste dagen te bewerken</span>
+        </div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Kind</th><th>Ma</th><th>Di</th><th>Wo</th><th>Do</th><th>Vr</th><th>Groep</th><th>Medewerker</th></tr></thead><tbody id="plan-tbody"><tr><td colspan="8"><div class="loader"><i class="ti ti-loader"></i></div></td></tr></tbody></table></div>
       </div>
 
@@ -932,8 +1068,9 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="card"><div class="card-h"><h3><i class="ti ti-table" style="color:var(--violet)"></i>Dagdelen instellen</h3></div><div class="card-b" id="av-form"></div></div>
           </div>
-          <div class="card admin-only"><div class="card-h"><h3><i class="ti ti-users" style="color:var(--blue)"></i>Team overzicht</h3><button class="btn btn-primary btn-sm" onclick="autoSchedule()"><i class="ti ti-wand"></i>Auto-rooster</button></div><div class="card-b" id="av-team"></div></div>
+          <div class="card admin-only"><div class="card-h"><h3><i class="ti ti-users" style="color:var(--blue)"></i>Team overzicht</h3><button class="btn btn-primary btn-sm" onclick="autoSchedule('beschikbaarheid')"><i class="ti ti-wand"></i>Auto-rooster</button></div><div class="card-b" id="av-team"></div></div>
         </div>
+        <div id="auto-preview-mount"></div>
       </div>
 
       <!-- ═══ WACHTLIJST ═══ -->
@@ -962,14 +1099,30 @@ a{color:inherit;text-decoration:none}
 
       <!-- ═══ BKR (admin only) ═══ -->
       <div class="view" id="view-bkr">
-        <div class="ph"><h1>BKR Calculator</h1><p>Besluit kwaliteit kinderopvang — bijgewerkt per 1 juli 2024</p></div>
-        <div class="alert alert-info"><i class="ti ti-book"></i><span><strong>Normen:</strong> 0-1jr→max 3 · 1-2jr→max 5 · 2-3jr→max 6 · 3-4jr→max 8 · BSO→max 10. <strong>3-uursregeling:</strong> max 3u/dag afwijken, min 50% pm aanwezig. Vierogenprincipe verplicht.</span></div>
-        <div class="card"><div class="card-b">
+        <div class="page-banner"><img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?q=80&w=1200&auto=format&fit=crop" alt=""><div class="page-banner-overlay"><div class="page-banner-text"><h1><i class="ti ti-calculator"></i> BKR Calculator</h1><p>Besluit kwaliteit kinderopvang — per 1 juli 2024</p></div></div></div>
+        <div class="bkr-norms">
+          <div class="bkr-norm-card">
+            <h4><i class="ti ti-mood-smile"></i>Beroepskracht-kind-ratio</h4>
+            <div class="bkr-norm-row"><span>0–1 jaar 🍼</span><span>max 3</span></div>
+            <div class="bkr-norm-row"><span>1–2 jaar 🧸</span><span>max 5</span></div>
+            <div class="bkr-norm-row"><span>2–3 jaar 🌱</span><span>max 6</span></div>
+            <div class="bkr-norm-row"><span>3–4 jaar 🌟</span><span>max 8</span></div>
+          </div>
+          <div class="bkr-norm-card">
+            <h4><i class="ti ti-clock"></i>3-uursregeling</h4>
+            <p>Maximaal 3 uur per dag mag van de BKR worden afgeweken (vóór 9:30, tijdens middagrust, na 16:30). Minstens 50% van de vereiste pm'ers moet altijd aanwezig zijn.</p>
+          </div>
+          <div class="bkr-norm-card">
+            <h4><i class="ti ti-eye"></i>Vierogenprincipe</h4>
+            <p>Een beroepskracht mag nooit alleen met kinderen zijn zonder dat een tweede volwassene kan meekijken of meeluisteren.</p>
+          </div>
+        </div>
+        <div class="card"><div class="card-h"><h3><i class="ti ti-calculator" style="color:var(--primary)"></i>Berekening</h3></div><div class="card-b">
           <div class="bkr-inputs">
-            <div class="bkr-ig"><label>0–1 jaar 🍼</label><input type="number" id="bkr-0" value="6" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 3/pm</div></div>
-            <div class="bkr-ig"><label>1–2 jaar 🧸</label><input type="number" id="bkr-1" value="8" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 5/pm</div></div>
-            <div class="bkr-ig"><label>2–3 jaar 🌱</label><input type="number" id="bkr-2" value="10" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 6/pm</div></div>
-            <div class="bkr-ig"><label>3–4 jaar 🌟</label><input type="number" id="bkr-3" value="8" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 8/pm</div></div>
+            <div class="bkr-ig"><label>0–1 jaar 🍼</label><input type="number" id="bkr-0" value="3" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 3/pm</div></div>
+            <div class="bkr-ig"><label>1–2 jaar 🧸</label><input type="number" id="bkr-1" value="5" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 5/pm</div></div>
+            <div class="bkr-ig"><label>2–3 jaar 🌱</label><input type="number" id="bkr-2" value="6" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 6/pm</div></div>
+            <div class="bkr-ig"><label>3–4 jaar 🌟</label><input type="number" id="bkr-3" value="6" min="0" oninput="calcBKR()"><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">max 8/pm</div></div>
           </div>
           <div class="bkr-result"><div><div class="bkr-big" id="bkr-num">7</div><div style="font-size:11px;color:var(--text3)">Vereiste pm'ers</div></div><div style="flex:1"><div id="bkr-breakdown" style="font-size:11px;color:var(--text3);line-height:1.9"></div></div></div>
           <div style="margin-top:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
@@ -987,17 +1140,47 @@ a{color:inherit;text-decoration:none}
 
       <!-- ═══ INSTELLINGEN ═══ -->
       <div class="view" id="view-instellingen">
-        <div class="ph"><div><h1>Instellingen</h1></div></div>
-        <div class="setting-block"><div class="setting-block-h"><i class="ti ti-building"></i>Locatie</div>
-          <div class="setting-row"><div><h4>Naam kinderdagverblijf</h4><p>Weergegeven in het systeem</p></div><input type="text" value="KinderKompas KDV" style="width:180px;padding:7px 9px;background:var(--bg);border:1.5px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;outline:none"></div>
-          <div class="setting-row"><div><h4>Openingstijden</h4></div><div style="display:flex;gap:5px;align-items:center"><input type="time" value="07:00" style="padding:6px;background:var(--bg);border:1.5px solid var(--border2);border-radius:6px;color:var(--text);outline:none"><span style="color:var(--text3)">–</span><input type="time" value="18:30" style="padding:6px;background:var(--bg);border:1.5px solid var(--border2);border-radius:6px;color:var(--text);outline:none"></div></div>
+        <div class="page-banner"><img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1200&auto=format&fit=crop" alt=""><div class="page-banner-overlay"><div class="page-banner-text"><h1><i class="ti ti-settings"></i> Instellingen</h1><p>Persoonlijke voorkeuren, locatie en data-export</p></div></div></div>
+        <div class="set-grid">
+          <div class="setting-block">
+            <div class="setting-block-h"><i class="ti ti-user"></i>Profiel</div>
+            <div class="setting-row"><div><h4>Naam</h4><p>Weergegeven in het systeem</p></div><input type="text" id="set-profile-name" class="set-input" style="width:170px"></div>
+            <div class="setting-row"><div><h4>E-mailadres</h4><p>Niet wijzigbaar — neem contact op met beheer</p></div><span id="set-profile-email" style="font-size:11px;color:var(--text3)"></span></div>
+            <div class="setting-row"><div><h4>Kleur</h4><p>Eigen accentkleur in roosters</p></div><div class="color-picker" id="set-color-picker"></div></div>
+            <div class="setting-row"><div><h4>Nieuw wachtwoord</h4><p>Laat leeg om niet te wijzigen</p></div><input type="password" id="set-profile-pw" class="set-input" placeholder="••••••••" style="width:170px"></div>
+            <div style="text-align:right;margin-top:10px"><button class="btn btn-primary btn-sm" onclick="saveProfile()"><i class="ti ti-device-floppy"></i>Profiel opslaan</button></div>
+          </div>
+
+          <div class="setting-block">
+            <div class="setting-block-h"><i class="ti ti-palette"></i>Voorkeuren</div>
+            <div class="setting-row"><div><h4>Thema</h4><p>Donker (standaard) of licht</p></div><button class="btn btn-outline btn-sm" onclick="toggleTheme()"><i class="ti ti-sun"></i><span id="theme-label">Donker</span></button></div>
+            <div class="setting-row"><div><h4>BKR-waarschuwingen</h4><p>Melding bij dreigende overschrijding</p></div><label class="sw"><input type="checkbox" id="set-notif-bkr" checked><span class="sw-sl"></span></label></div>
+            <div class="setting-row"><div><h4>Observatieherinnering</h4><p>Herinner bij vervallen observatie</p></div><label class="sw"><input type="checkbox" id="set-notif-obs" checked><span class="sw-sl"></span></label></div>
+            <div class="setting-row"><div><h4>Verlofmeldingen</h4><p>Nieuwe aanvragen en goedkeuringen</p></div><label class="sw"><input type="checkbox" id="set-notif-leave" checked><span class="sw-sl"></span></label></div>
+          </div>
+
+          <div class="setting-block admin-only">
+            <div class="setting-block-h"><i class="ti ti-building"></i>Locatie</div>
+            <div class="setting-row"><div><h4>Naam kinderdagverblijf</h4><p>Verschijnt op exports en in het systeem</p></div><input type="text" id="set-kdv-name" class="set-input" style="width:180px"></div>
+            <div class="setting-row"><div><h4>Openingstijden</h4><p>Beïnvloedt BKR-vensters en auto-rooster</p></div>
+              <div style="display:flex;gap:5px;align-items:center">
+                <input type="time" id="set-open" class="set-input">
+                <span style="color:var(--text3)">–</span>
+                <input type="time" id="set-close" class="set-input">
+              </div>
+            </div>
+            <div class="setting-row"><div><h4>Capaciteit</h4><p>2 groepen × <span id="set-cap-grp">12</span> kinderen = <strong style="color:var(--text2)"><span id="set-cap-day">24</span>/dag</strong> totaal</p></div><span style="font-size:11px;color:var(--text3)">Vast — neem contact op met beheer voor wijzigingen</span></div>
+            <div style="text-align:right;margin-top:10px"><button class="btn btn-primary btn-sm" onclick="saveLocation()"><i class="ti ti-device-floppy"></i>Locatie opslaan</button></div>
+          </div>
+
+          <div class="setting-block">
+            <div class="setting-block-h"><i class="ti ti-database-export"></i>Data &amp; privacy</div>
+            <div class="setting-row"><div><h4>Eigen data exporteren</h4><p>Download je gegevens als JSON (AVG-compliant)</p></div><button class="btn btn-outline btn-sm" onclick="exportSelfData()"><i class="ti ti-download"></i>Exporteren</button></div>
+            <div class="setting-row admin-only"><div><h4>Kinderen exporteren</h4><p>Volledige lijst met groep en toewijzing</p></div><button class="btn btn-outline btn-sm" onclick="exportCSV('planning')"><i class="ti ti-file-spreadsheet"></i>CSV</button></div>
+            <div class="setting-row admin-only"><div><h4>Observaties exporteren</h4><p>Alle observaties van actieve kinderen</p></div><button class="btn btn-outline btn-sm" onclick="exportObs()"><i class="ti ti-file-spreadsheet"></i>CSV</button></div>
+            <div class="setting-row"><div><h4>Uitloggen</h4><p>Sluit deze sessie af</p></div><button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="doLogout()"><i class="ti ti-logout"></i>Uitloggen</button></div>
+          </div>
         </div>
-        <div class="setting-block"><div class="setting-block-h"><i class="ti ti-bell"></i>Meldingen</div>
-          <div class="setting-row"><div><h4>BKR waarschuwingen</h4><p>Melding bij dreigende overschrijding</p></div><label class="sw"><input type="checkbox" checked><span class="sw-sl"></span></label></div>
-          <div class="setting-row"><div><h4>Observatieherinnering</h4><p>Herinner bij vervallen observatie</p></div><label class="sw"><input type="checkbox" checked><span class="sw-sl"></span></label></div>
-          <div class="setting-row"><div><h4>Verlofmeldingen</h4></div><label class="sw"><input type="checkbox" checked><span class="sw-sl"></span></label></div>
-        </div>
-        <div style="display:flex;gap:7px;justify-content:flex-end"><button class="btn btn-outline btn-sm">Annuleren</button><button class="btn btn-primary btn-sm" onclick="toast('Instellingen opgeslagen!')"><i class="ti ti-device-floppy"></i>Opslaan</button></div>
       </div>
 
     </div><!-- /page -->
@@ -1023,7 +1206,7 @@ a{color:inherit;text-decoration:none}
     <div class="modal-photo"><img src="https://images.unsplash.com/photo-1567405258710-35a7015252c0?q=80&w=800&auto=format&fit=crop" alt=""><div class="modal-photo-overlay"><h2><i class="ti ti-user-plus"></i>Kind toevoegen</h2></div></div>
     <div class="modal-b">
       <div class="frow"><div class="fld"><label>Voornaam *</label><input type="text" id="nc-fn" placeholder="Emma"></div><div class="fld"><label>Achternaam *</label><input type="text" id="nc-ln" placeholder="de Vries"></div></div>
-      <div class="frow"><div class="fld"><label>Geboortedatum *</label><input type="date" id="nc-dob"></div><div class="fld"><label>Groep</label><select id="nc-group"><option value="Babygroep">🍼 Babygroep</option><option value="Dreumesgroep">🧸 Dreumesgroep</option><option value="Peutergroep">🌱 Peutergroep</option></select></div></div>
+      <div class="frow"><div class="fld"><label>Geboortedatum *</label><input type="date" id="nc-dob"></div><div class="fld"><label>Groep</label><select id="nc-group"><option value="Babygroep">🍼 Babygroep (0-2 jr)</option><option value="Peutergroep">🌱 Peutergroep (2-4 jr)</option></select></div></div>
       <div class="fld"><label>Vaste medewerker</label><select id="nc-leid"></select></div>
       <div class="fld"><label>Aanwezige dagen</label>
         <div style="display:flex;gap:10px;margin-top:5px;flex-wrap:wrap">
@@ -1152,6 +1335,48 @@ a{color:inherit;text-decoration:none}
       <div class="fld"><label>Notities</label><textarea id="tour-notes" rows="2"></textarea></div>
     </div>
     <div class="modal-f"><button class="btn btn-outline btn-sm" onclick="closeModal('modal-add-tour')">Annuleren</button><button class="btn btn-primary btn-sm" onclick="addTour()"><i class="ti ti-check"></i>Plannen</button></div>
+  </div>
+</div>
+
+<!-- EDIT CHILD -->
+<div class="overlay" id="modal-edit-child">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-h"><h2><i class="ti ti-edit" style="color:var(--primary)"></i>Kind bewerken</h2><button class="xbtn" onclick="closeModal('modal-edit-child')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-b">
+      <input type="hidden" id="ec-id">
+      <div class="fld"><label>Naam</label><input type="text" id="ec-name"></div>
+      <div class="frow"><div class="fld"><label>Geboortedatum</label><input type="date" id="ec-dob"></div><div class="fld"><label>Groep</label><select id="ec-group"><option value="Babygroep">🍼 Babygroep (0-2 jr)</option><option value="Peutergroep">🌱 Peutergroep (2-4 jr)</option></select></div></div>
+      <div class="fld"><label>Vaste dagen</label>
+        <div class="day-toggle-grid" id="ec-days"></div>
+        <p style="font-size:10px;color:var(--text3);margin-top:5px">Klik dagen om aan/uit te zetten. Eenmalige wijzigingen kun je in de planning per week instellen.</p>
+      </div>
+      <div class="frow"><div class="fld"><label>Contactpersoon</label><input type="text" id="ec-cname"></div><div class="fld"><label>Telefoon</label><input type="tel" id="ec-cphone"></div></div>
+      <div class="fld"><label>Notities</label><textarea id="ec-notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-outline btn-sm admin-only" style="color:var(--red);border-color:var(--red);margin-right:auto" onclick="deleteChildConfirm()"><i class="ti ti-trash"></i>Deactiveren</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-edit-child')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="saveChild()"><i class="ti ti-device-floppy"></i>Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SHIFT -->
+<div class="overlay" id="modal-edit-shift">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-h"><h2><i class="ti ti-edit" style="color:var(--primary)"></i>Dienst bewerken</h2><button class="xbtn" onclick="closeModal('modal-edit-shift')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-b">
+      <input type="hidden" id="es-id">
+      <div class="fld"><label>Medewerker</label><div id="es-user-display" style="font-size:13px;font-weight:600;padding:8px 0"></div></div>
+      <div class="frow"><div class="fld"><label>Datum</label><input type="date" id="es-date"></div><div class="fld"><label>Type</label><select id="es-type"><option value="werk">Werk</option><option value="vakantie">Vakantie</option><option value="vrij">Vrij</option><option value="ziek">Ziek</option></select></div></div>
+      <div class="frow"><div class="fld"><label>Begin</label><input type="time" id="es-start"></div><div class="fld"><label>Einde</label><input type="time" id="es-end"></div></div>
+      <div class="fld"><label>Notitie</label><textarea id="es-notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red);margin-right:auto" onclick="deleteShiftConfirm()"><i class="ti ti-trash"></i>Verwijderen</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-edit-shift')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="saveShift()"><i class="ti ti-device-floppy"></i>Opslaan</button>
+    </div>
   </div>
 </div>
 
@@ -1307,6 +1532,16 @@ function initApp() {
   loadStaff();
   showView('dashboard');
   loadDashboard();
+
+  // Scroll listener voor banner-animatie (krimpt zodra de page-content scrollt)
+  const pageEl = document.querySelector('.page');
+  if (pageEl && !pageEl.dataset.scrollWired) {
+    pageEl.dataset.scrollWired = '1';
+    pageEl.addEventListener('scroll', () => {
+      if (pageEl.scrollTop > 30) pageEl.classList.add('scrolled');
+      else pageEl.classList.remove('scrolled');
+    }, { passive: true });
+  }
 }
 
 // ══════════════════════════════
@@ -1332,6 +1567,9 @@ function showView(id) {
   closeSb();
   closeMore();
   hideSR();
+  // Reset scroll + banner state bij wissel van view
+  const pageEl = document.querySelector('.page');
+  if (pageEl) { pageEl.scrollTop = 0; pageEl.classList.remove('scrolled'); }
   // Update bottom nav active state
   const bnIds=['dashboard','planning','observaties','werkrooster','wachtlijst','medewerkers','beschikbaarheid','contacten','bkr','toewijzen','instellingen'];
   document.querySelectorAll('.bn-item[id^="bn-"]').forEach(b=>b.classList.remove('on'));
@@ -1347,6 +1585,7 @@ function showView(id) {
   if (id === 'contacten')      loadContacten();
   if (id === 'bkr')            calcBKR();
   if (id === 'toewijzen')      loadAssign();
+  if (id === 'instellingen')   loadSettings();
 }
 
 // ══════════════════════════════
@@ -1461,45 +1700,164 @@ function nextWeek() { wkOffset++; loadPlanning(); loadRooster(); }
 // ══════════════════════════════
 // KINDERPLANNING
 // ══════════════════════════════
+let planningData = null;
+let planningWeekStart = null;
+
 async function loadPlanning() {
   const dates = getWeekDates();
   const lbl = getWeekLabel(dates);
   ['wk-label','rooster-wk-label'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = lbl; });
+  planningWeekStart = dates[0].toISOString().split('T')[0];
   try {
-    const kids = await api('GET', '/children');
-    if (!kids) return; allChildren = kids;
-    const fl = planFilter === 'all' ? kids : kids.filter(c => c.group_name === planFilter);
-    const tbody = document.getElementById('plan-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = fl.map(ch => {
-      const days = Array.isArray(ch.days) ? ch.days : [0,0,0,0,0];
-      const inits = ch.name.split(' ').map(w => w[0]).slice(0,2).join('');
-      const col = ch.group_color || 'var(--primary)';
-      const grpBadge = ch.group_name === 'Babygroep' ? 'b-green' : ch.group_name === 'Dreumesgroep' ? 'b-violet' : 'b-blue';
-      return `<tr data-group="${ch.group_name}" data-name="${ch.name.toLowerCase()}">
-        <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${inits}</div><div><div style="font-size:12px;font-weight:600">${ch.name}</div><div style="font-size:9px;color:var(--text3)">${ch.leidster_name||'—'}</div></div></div></td>
-        ${days.map(d => `<td><div class="pday ${d?'on':'off'}">${d?'✓':'·'}</div></td>`).join('')}
-        <td><span class="badge ${grpBadge}">${ch.group_name.replace('groep','')}</span></td>
-        <td style="font-size:11px;color:var(--text2)">${ch.leidster_name||'—'}</td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="8"><div class="empty"><i class="ti ti-users-group"></i><h3>Geen kinderen gevonden</h3></div></td></tr>`;
+    const data = await api('GET', `/planning?week_start=${planningWeekStart}`);
+    if (!data) return;
+    planningData = data;
+    allChildren = data.children;
+    renderPlanning();
+  } catch (e) { console.error(e); toast('Fout: '+e.message); }
+}
 
-    // BKR per dag
-    const bkrGrid = document.getElementById('bkr-day-grid');
-    if (bkrGrid) {
-      bkrGrid.innerHTML = dates.map((d, i) => {
-        const count = kids.filter(c => (Array.isArray(c.days)?c.days:[0,0,0,0,0])[i]).length;
-        const babies = kids.filter(c => (Array.isArray(c.days)?c.days:[0,0,0,0,0])[i] && c.group_name==='Babygroep').length;
-        const req = Math.ceil(babies/3) + Math.ceil(Math.max(0,count-babies)/5);
-        const ok = req <= 4;
-        return `<div style="background:${ok?'var(--green-l)':'var(--gold-l)'};border-radius:9px;padding:10px;border:1px solid ${ok?'rgba(34,197,94,.2)':'rgba(250,204,21,.2)'}"><div style="font-size:9px;font-weight:700;color:var(--text3);margin-bottom:3px">${DS[i]} ${d.getDate()}/${d.getMonth()+1}</div><div style="font-family:'Plus Jakarta Sans';font-size:20px;font-weight:800;color:${ok?'var(--green)':'var(--gold)'};">${count}</div><div style="font-size:9px;color:var(--text3)">kinderen</div><div style="font-size:9px;font-weight:700;margin-top:3px">Min. ${req} pm ${ok?'✅':'⚠️'}</div></div>`;
-      }).join('');
+function renderPlanning() {
+  if (!planningData) return;
+  const dates = getWeekDates();
+  const kids = planningData.children;
+  const fl = planFilter === 'all' ? kids : kids.filter(c => c.group_name === planFilter);
+  const tbody = document.getElementById('plan-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = fl.map(ch => {
+    const fixed = Array.isArray(ch.days) ? ch.days : [0,0,0,0,0];
+    const week  = Array.isArray(ch.week_days) ? ch.week_days : fixed;
+    const inits = ch.name.split(' ').map(w => w[0]).slice(0,2).join('');
+    const col = ch.group_color || 'var(--primary)';
+    const grpBadge = ch.group_name === 'Babygroep' ? 'b-green' : 'b-blue';
+    // Cell state per day: fixed (vast aanwezig), extra (overschreven aan), absent (overschreven uit), empty
+    const cells = [0,1,2,3,4].map(i => {
+      const f = fixed[i] ? 1 : 0;
+      const w = week[i] ? 1 : 0;
+      let cls = 'empty', label = '·';
+      if (f === 1 && w === 1) { cls = 'fixed'; label = '✓'; }
+      else if (f === 0 && w === 1) { cls = 'extra'; label = '✓'; }
+      else if (f === 1 && w === 0) { cls = 'absent'; label = '✕'; }
+      const dateStr = dates[i].toISOString().split('T')[0];
+      return `<td class="plan-td"><div class="plan-cell ${cls}" onclick="togglePlanCell(${ch.id}, ${i}, '${dateStr}', '${cls}')" title="${dateStr}">${label}</div></td>`;
+    }).join('');
+    return `<tr data-group="${ch.group_name}" data-name="${ch.name.toLowerCase()}">
+      <td><div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openEditChild(${ch.id})"><div style="width:28px;height:28px;border-radius:50%;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${inits}</div><div><div style="font-size:12px;font-weight:600">${ch.name}</div><div style="font-size:9px;color:var(--text3)">${ch.leidster_name||'—'}</div></div></div></td>
+      ${cells}
+      <td><span class="badge ${grpBadge}">${ch.group_name.replace('groep','')}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${ch.leidster_name||'—'}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8"><div class="empty"><i class="ti ti-users-group"></i><h3>Geen kinderen gevonden</h3></div></td></tr>`;
+
+  // Capaciteit per dag — KDV: max 12/groep, max 24/dag totaal
+  const MAX_PER_GROUP = 12;
+  const MAX_PER_DAY   = 24;
+  const bkrGrid = document.getElementById('bkr-day-grid');
+  if (bkrGrid) {
+    bkrGrid.innerHTML = dates.map((d, i) => {
+      const dayKids = kids.filter(c => (c.week_days||c.days||[0,0,0,0,0])[i]);
+      const baby   = dayKids.filter(c => c.group_name==='Babygroep').length;
+      const peuter = dayKids.filter(c => c.group_name==='Peutergroep').length;
+      const count  = baby + peuter;
+      const overGroup = baby > MAX_PER_GROUP || peuter > MAX_PER_GROUP;
+      const overDay   = count > MAX_PER_DAY;
+      const warn = overGroup || overDay;
+      // BKR-richtlijn pm'ers (grof: baby ratio 1:5, peuter ratio 1:7 gemiddeld)
+      const reqPM = Math.ceil(baby/5) + Math.ceil(peuter/7);
+      const reqOk = reqPM <= 4;
+      const bg = warn ? 'rgba(239,68,68,.12)' : reqOk ? 'var(--green-l)' : 'var(--gold-l)';
+      const border = warn ? 'rgba(239,68,68,.4)' : reqOk ? 'rgba(34,197,94,.2)' : 'rgba(250,204,21,.2)';
+      const numColor = warn ? 'var(--red)' : reqOk ? 'var(--green)' : 'var(--gold)';
+      const icon = warn ? '🚫' : reqOk ? '✅' : '⚠️';
+      return `<div style="background:${bg};border-radius:9px;padding:10px;border:1px solid ${border}">
+        <div style="font-size:9px;font-weight:700;color:var(--text3);margin-bottom:3px">${DS[i]} ${d.getDate()}/${d.getMonth()+1}</div>
+        <div style="font-family:'Plus Jakarta Sans';font-size:20px;font-weight:800;color:${numColor};">${count}<span style="font-size:11px;font-weight:600;color:var(--text3)"> / ${MAX_PER_DAY}</span></div>
+        <div style="font-size:9px;color:var(--text3)">Baby <strong style="color:${baby>MAX_PER_GROUP?'var(--red)':'var(--text2)'}">${baby}</strong> · Peuter <strong style="color:${peuter>MAX_PER_GROUP?'var(--red)':'var(--text2)'}">${peuter}</strong></div>
+        <div style="font-size:9px;font-weight:700;margin-top:3px">${warn?'Over capaciteit':'Min. '+reqPM+' pm'} ${icon}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+async function togglePlanCell(childId, dayIdx, dateStr, currentState) {
+  // empty  → POST extra  (eenmalige bijboeking)
+  // fixed  → POST absent (eenmalige afmelding)
+  // extra  → DELETE override (terug naar empty)
+  // absent → DELETE override (terug naar fixed)
+  try {
+    if (currentState === 'empty') {
+      await api('POST', `/children/${childId}/overrides`, {override_date: dateStr, kind: 'extra'});
+      toast('Extra dag bijgeboekt ✓');
+    } else if (currentState === 'fixed') {
+      await api('POST', `/children/${childId}/overrides`, {override_date: dateStr, kind: 'absent'});
+      toast('Dag afgemeld ✓');
+    } else {
+      // Vind override en verwijder
+      const ch = planningData.children.find(c => c.id === childId);
+      const ov = (ch?.overrides || []).find(o => o.override_date === dateStr);
+      if (ov) {
+        await api('DELETE', `/children/overrides/${ov.id}`);
+        toast('Wijziging teruggedraaid ✓');
+      }
     }
-  } catch (e) { console.error(e); }
+    await loadPlanning();
+  } catch (e) { toast('Fout: '+e.message); }
 }
 
 function filterPlan(q) { document.querySelectorAll('#plan-tbody tr').forEach(r => { r.style.display = r.dataset.name && r.dataset.name.includes(q.toLowerCase()) ? '' : 'none'; }); }
-function setPlanFilter(g, btn) { planFilter=g; document.querySelectorAll('#view-planning .fchip').forEach(c=>c.classList.remove('on')); btn.classList.add('on'); loadPlanning(); }
+function setPlanFilter(g, btn) { planFilter=g; document.querySelectorAll('#view-planning .fchip').forEach(c=>c.classList.remove('on')); btn.classList.add('on'); renderPlanning(); }
+
+// ══════════════════════════════
+// EDIT CHILD — vaste dagen + details bewerken
+// ══════════════════════════════
+function openEditChild(cid) {
+  const ch = (allChildren || []).find(c => c.id === cid);
+  if (!ch) { toast('Kind niet gevonden'); return; }
+  document.getElementById('ec-id').value = cid;
+  document.getElementById('ec-name').value = ch.name || '';
+  document.getElementById('ec-dob').value = ch.dob || '';
+  document.getElementById('ec-group').value = ch.group_name || 'Babygroep';
+  document.getElementById('ec-cname').value = ch.contact_name || '';
+  document.getElementById('ec-cphone').value = ch.contact_phone || '';
+  document.getElementById('ec-notes').value = ch.notes || '';
+  const days = Array.isArray(ch.days) ? ch.days : [0,0,0,0,0];
+  const grid = document.getElementById('ec-days');
+  grid.innerHTML = DS.map((lbl,i) =>
+    `<div class="day-toggle ${days[i]?'on':''}" data-idx="${i}" onclick="this.classList.toggle('on')">${lbl}</div>`
+  ).join('');
+  openModal('modal-edit-child');
+}
+
+async function saveChild() {
+  const cid = parseInt(document.getElementById('ec-id').value);
+  const days = [0,1,2,3,4].map(i => document.querySelector(`#ec-days .day-toggle[data-idx="${i}"]`).classList.contains('on') ? 1 : 0);
+  const body = {
+    name:  document.getElementById('ec-name').value.trim(),
+    dob:   document.getElementById('ec-dob').value,
+    group_name: document.getElementById('ec-group').value,
+    contact_name: document.getElementById('ec-cname').value.trim(),
+    contact_phone: document.getElementById('ec-cphone').value.trim(),
+    notes: document.getElementById('ec-notes').value.trim(),
+    days,
+  };
+  try {
+    await api('PATCH', `/children/${cid}`, body);
+    toast('Kind bijgewerkt ✓');
+    closeModal('modal-edit-child');
+    loadPlanning();
+  } catch (e) { toast('Fout: '+e.message); }
+}
+
+async function deleteChildConfirm() {
+  const cid = parseInt(document.getElementById('ec-id').value);
+  if (!confirm('Weet je zeker dat je dit kind wilt deactiveren? Het verschijnt niet meer in de lijst maar de gegevens blijven bewaard.')) return;
+  try {
+    await api('DELETE', `/children/${cid}`);
+    toast('Kind gedeactiveerd');
+    closeModal('modal-edit-child');
+    loadPlanning();
+  } catch (e) { toast('Fout: '+e.message); }
+}
 
 // ══════════════════════════════
 // OBSERVATIONS
@@ -1515,7 +1873,7 @@ function renderObs() {
   if (!list.length) { tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><i class="ti ti-clipboard-off"></i><h3>Geen observaties gevonden</h3></div></td></tr>`; return; }
   tbody.innerHTML = list.map(ch => {
     const st = ch.obs_status; const isDone = st==='done';
-    const grpBadge = ch.group_name==='Babygroep'?'b-green':ch.group_name==='Dreumesgroep'?'b-violet':'b-blue';
+    const grpBadge = ch.group_name==='Babygroep'?'b-green':'b-blue';
     const stColor = st==='overdue'?'var(--red)':st==='needed'?'var(--gold)':'var(--text2)';
     return `<tr>
       <td><strong style="font-size:12px">${ch.name}</strong></td>
@@ -1692,10 +2050,12 @@ async function loadRooster() {
   try {
     const [shifts,staff] = await Promise.all([api('GET',`/shifts?from=${fr}&to=${to}`),api('GET','/staff')]);
     if(!shifts||!staff) return;
+    rosterShifts = shifts; rosterStaff = staff;
     const container=document.getElementById('sched-container'); if(!container) return;
     const workers = staff.filter(s=>s.active && (currentUser.role==='admin'||s.id===currentUser.id));
     let html=`<div class="sched"><div class="sched-grid"><div class="sched-hdr">Medewerker</div>${dates.map((d,i)=>`<div class="sched-hdr">${DS[i]} ${d.getDate()}/${d.getMonth()+1}</div>`).join('')}`;
     const isMobile = window.innerWidth <= 768;
+    const canEdit = (sh) => currentUser.role==='admin' || sh.user_id===currentUser.id;
     if (isMobile) {
       // Mobile: per-dag lijst
       let mhtml = '<div class="sched" style="min-width:0">';
@@ -1707,7 +2067,8 @@ async function loadRooster() {
           <div style="font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${DAYS[di]} ${d.getDate()}/${d.getMonth()+1}</div>
           <div style="display:flex;flex-direction:column;gap:5px">`;
         dayShifts.forEach(sh => {
-          mhtml += `<div style="display:flex;align-items:center;gap:9px">
+          const editable = canEdit(sh);
+          mhtml += `<div style="display:flex;align-items:center;gap:9px;${editable?'cursor:pointer':''}" ${editable?`onclick="openEditShift(${sh.id})"`:''}>
             <div style="width:26px;height:26px;border-radius:50%;background:${sh.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${sh.initials}</div>
             <span style="font-size:12px;font-weight:600;flex:1">${sh.user_name.split(' ')[0]}</span>
             <span class="shift shift-${sh.shift_type}" style="margin:0">${sh.start_time||''}${sh.end_time?'–'+sh.end_time:''}</span>
@@ -1720,7 +2081,14 @@ async function loadRooster() {
     } else {
       workers.forEach(s=>{
         html+=`<div class="sched-name"><div style="width:22px;height:22px;border-radius:50%;background:${s.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${s.initials}</div>${s.name.split(' ')[0]}</div>`;
-        dates.forEach(d=>{const ds=d.toISOString().split('T')[0];const dayShifts=shifts.filter(sh=>sh.user_id===s.id&&sh.shift_date===ds);html+=`<div class="sched-cell">${dayShifts.map(sh=>`<div class="shift shift-${sh.shift_type}">${sh.start_time||''}${sh.end_time?'–'+sh.end_time:''}</div>`).join('')}</div>`;});
+        dates.forEach(d=>{
+          const ds=d.toISOString().split('T')[0];
+          const dayShifts=shifts.filter(sh=>sh.user_id===s.id&&sh.shift_date===ds);
+          html+=`<div class="sched-cell">${dayShifts.map(sh=>{
+            const editable = canEdit(sh);
+            return `<div class="shift shift-${sh.shift_type} sched-shift" ${editable?`onclick="openEditShift(${sh.id})" title="Klik om te bewerken"`:''}>${sh.start_time||''}${sh.end_time?'–'+sh.end_time:''}${editable?'<div class="shift-actions"><button class="shift-act-btn" onclick="event.stopPropagation();openEditShift('+sh.id+')" title="Bewerken"><i class=\'ti ti-pencil\'></i></button></div>':''}</div>`;
+          }).join('')}</div>`;
+        });
       });
       html+='</div></div>'; container.innerHTML=html;
     }
@@ -1756,8 +2124,112 @@ async function loadLeave() {
   } catch(e){}
 }
 async function reviewLeave(id,action){try{await api('PATCH',`/leave/${id}/review`,{action});toast(action==='approve'?'Verlof goedgekeurd ✓':'Verlof afgewezen');loadLeave();loadDashboard();}catch(e){toast('Fout: '+e.message)}}
-async function autoSchedule(){const dates=getWeekDates();const ws=dates[0].toISOString().split('T')[0];try{const r=await api('POST','/shifts/auto-schedule',{week_start:ws});toast(`Auto-rooster: ${r.created} diensten ingepland!`);loadRooster();}catch(e){toast('Fout: '+e.message)}}
+
+async function autoSchedule(source) {
+  const dates = getWeekDates();
+  const ws = dates[0].toISOString().split('T')[0];
+  try {
+    const r = await api('POST', '/shifts/auto-schedule', {week_start: ws});
+    if (!r) return;
+    if (r.created === 0) {
+      toast('Geen nieuwe diensten — bestaande diensten zijn niet overschreven');
+    } else {
+      toast(`Auto-rooster: ${r.created} dienst${r.created===1?'':'en'} ingepland voor week ${r.week} ✓`);
+    }
+    if (source === 'beschikbaarheid') {
+      renderAutoPreview(r);
+    } else {
+      loadRooster();
+    }
+  } catch (e) { toast('Fout: '+e.message); }
+}
+
+function renderAutoPreview(r) {
+  const mount = document.getElementById('auto-preview-mount');
+  if (!mount) return;
+  if (!r.shifts || !r.shifts.length) {
+    mount.innerHTML = `<div class="auto-preview" style="border-color:var(--gold)">
+      <div class="auto-preview-h"><h4 style="color:var(--gold)"><i class="ti ti-info-circle"></i>Geen nieuwe diensten</h4>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('auto-preview-mount').innerHTML=''"><i class="ti ti-x"></i></button>
+      </div>
+      <p style="font-size:12px;color:var(--text2)">Voor week ${r.week} zijn geen nieuwe diensten aangemaakt. Mogelijk staan ze er al, of is er geen beschikbaarheid opgeslagen voor deze week.</p>
+    </div>`;
+    return;
+  }
+  // Groepeer per dag
+  const byDay = [[],[],[],[],[]];
+  r.shifts.forEach(sh => {
+    const d = new Date(sh.shift_date);
+    const dow = (d.getDay() + 6) % 7; // ma=0
+    if (dow >= 0 && dow <= 4) byDay[dow].push(sh);
+  });
+  const startDate = new Date(r.week_start);
+  mount.innerHTML = `<div class="auto-preview">
+    <div class="auto-preview-h">
+      <h4><i class="ti ti-sparkles"></i>${r.created} diensten ingepland — week ${r.week}</h4>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="showView('werkrooster')"><i class="ti ti-external-link"></i>Naar werkrooster</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('auto-preview-mount').innerHTML=''"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div class="auto-preview-list">
+      ${[0,1,2,3,4].map(i => {
+        const dd = new Date(startDate); dd.setDate(dd.getDate()+i);
+        return `<div class="auto-preview-day">
+          <div class="auto-preview-day-h">${DS[i]} ${dd.getDate()}/${dd.getMonth()+1}</div>
+          ${byDay[i].map(sh => `<div class="auto-shift"><span class="dot" style="background:${sh.color}"></span>${sh.initials} ${sh.start_time||''}</div>`).join('') || '<div style="font-size:10px;color:var(--text3);text-align:center;padding:4px">—</div>'}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function showTab(id){['rooster','uren','verlof'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===id?'block':'none';document.querySelectorAll('.tab').forEach((tab,i)=>tab.classList.toggle('on',['rooster','uren','verlof'][i]===id));});if(id==='uren')loadUren();if(id==='verlof')loadLeave();if(id==='rooster')loadRooster();}
+
+// ══════════════════════════════
+// EDIT SHIFT
+// ══════════════════════════════
+let rosterShifts = []; let rosterStaff = [];
+function openEditShift(sid) {
+  const sh = rosterShifts.find(s => s.id === sid);
+  if (!sh) { toast('Dienst niet gevonden'); return; }
+  document.getElementById('es-id').value = sid;
+  document.getElementById('es-user-display').innerHTML = `<div style="display:inline-flex;align-items:center;gap:7px"><div style="width:22px;height:22px;border-radius:50%;background:${sh.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${sh.initials}</div>${sh.user_name}</div>`;
+  document.getElementById('es-date').value = sh.shift_date;
+  document.getElementById('es-type').value = sh.shift_type || 'werk';
+  document.getElementById('es-start').value = sh.start_time || '';
+  document.getElementById('es-end').value = sh.end_time || '';
+  document.getElementById('es-notes').value = sh.notes || '';
+  openModal('modal-edit-shift');
+}
+
+async function saveShift() {
+  const sid = parseInt(document.getElementById('es-id').value);
+  const body = {
+    shift_date: document.getElementById('es-date').value,
+    shift_type: document.getElementById('es-type').value,
+    start_time: document.getElementById('es-start').value,
+    end_time: document.getElementById('es-end').value,
+    notes: document.getElementById('es-notes').value.trim(),
+  };
+  try {
+    await api('PATCH', `/shifts/${sid}`, body);
+    toast('Dienst bijgewerkt ✓');
+    closeModal('modal-edit-shift');
+    loadRooster();
+  } catch (e) { toast('Fout: '+e.message); }
+}
+
+async function deleteShiftConfirm() {
+  const sid = parseInt(document.getElementById('es-id').value);
+  if (!confirm('Deze dienst verwijderen?')) return;
+  try {
+    await api('DELETE', `/shifts/${sid}`);
+    toast('Dienst verwijderd');
+    closeModal('modal-edit-shift');
+    loadRooster();
+  } catch (e) { toast('Fout: '+e.message); }
+}
 
 // ══════════════════════════════
 // AVAILABILITY (WEEKLY)
@@ -2043,7 +2515,7 @@ async function addChild(){
   const dob=document.getElementById('nc-dob')?.value; const group=document.getElementById('nc-group')?.value;
   if(!fn||!ln||!dob){toast('Vul naam en geboortedatum in');return;}
   const days=[0,0,0,0,0]; document.querySelectorAll('.nc-day:checked').forEach(c=>days[parseInt(c.value)]=1);
-  const groupColors={'Babygroep':'#22c55e','Dreumesgroep':'#8b5cf6','Peutergroep':'#1d9bf0'};
+  const groupColors={'Babygroep':'#22c55e','Peutergroep':'#1d9bf0'};
   try{await api('POST','/children',{name:`${fn} ${ln}`,dob,group_name:group,group_color:groupColors[group],assigned_leidster_id:document.getElementById('nc-leid')?.value||null,days,contact_name:document.getElementById('nc-cn')?.value,contact_phone:document.getElementById('nc-tel')?.value});closeModal('modal-add-child');toast(`${fn} ${ln} toegevoegd! 🎉`);loadPlanning();}catch(e){toast('Fout: '+e.message);}
 }
 async function addShift(){
@@ -2246,6 +2718,113 @@ function toggleTheme(){
   localStorage.setItem('kk_theme',next);
   const icon=document.getElementById('theme-icon');
   if(icon){icon.className=next==='dark'?'ti ti-sun':'ti ti-moon';}
+  const lbl=document.getElementById('theme-label');
+  if(lbl)lbl.textContent=next==='dark'?'Donker':'Licht';
+}
+
+// ══════════════════════════════
+// INSTELLINGEN
+// ══════════════════════════════
+const SETTINGS_COLORS = ['#6366f1','#8b5cf6','#1d9bf0','#22c55e','#f472b6','#facc15','#ef4444','#06b6d4'];
+
+async function loadSettings(){
+  try {
+    // Profiel
+    const me = currentUser;
+    document.getElementById('set-profile-name').value = me.name || '';
+    document.getElementById('set-profile-email').textContent = me.email || '';
+    document.getElementById('set-profile-pw').value = '';
+    // Kleur picker
+    const picker = document.getElementById('set-color-picker');
+    picker.innerHTML = SETTINGS_COLORS.map(c =>
+      `<div class="color-swatch ${c===me.color?'on':''}" data-color="${c}" style="background:${c}" onclick="pickColor('${c}')"></div>`
+    ).join('');
+    // Thema-label sync
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = theme === 'dark' ? 'Donker' : 'Licht';
+    // App settings
+    const s = await api('GET', '/settings');
+    if (!s) return;
+    const kdv = document.getElementById('set-kdv-name'); if (kdv) kdv.value = s.kdv_name || '';
+    const op  = document.getElementById('set-open');     if (op)  op.value  = s.opening_time || '';
+    const cl  = document.getElementById('set-close');    if (cl)  cl.value  = s.closing_time || '';
+    const cg  = document.getElementById('set-cap-grp');  if (cg)  cg.textContent = s.max_per_group || '12';
+    const cd  = document.getElementById('set-cap-day');  if (cd)  cd.textContent = s.max_per_day || '24';
+    document.getElementById('set-notif-bkr').checked   = s.notif_bkr === '1';
+    document.getElementById('set-notif-obs').checked   = s.notif_observation === '1';
+    document.getElementById('set-notif-leave').checked = s.notif_leave === '1';
+    // Wire de notif-switches om bij verandering te persisten (admin only)
+    if (currentUser.role === 'admin') {
+      document.getElementById('set-notif-bkr').onchange   = () => persistNotif('notif_bkr', document.getElementById('set-notif-bkr').checked);
+      document.getElementById('set-notif-obs').onchange   = () => persistNotif('notif_observation', document.getElementById('set-notif-obs').checked);
+      document.getElementById('set-notif-leave').onchange = () => persistNotif('notif_leave', document.getElementById('set-notif-leave').checked);
+    }
+  } catch(e) { console.error(e); }
+}
+
+function pickColor(c){
+  document.querySelectorAll('#set-color-picker .color-swatch').forEach(s=>s.classList.toggle('on', s.dataset.color===c));
+}
+
+async function saveProfile(){
+  const body = {
+    name: document.getElementById('set-profile-name').value.trim(),
+  };
+  const picked = document.querySelector('#set-color-picker .color-swatch.on');
+  if (picked) body.color = picked.dataset.color;
+  const pw = document.getElementById('set-profile-pw').value;
+  if (pw) {
+    if (pw.length < 6) { toast('Wachtwoord moet minstens 6 tekens zijn'); return; }
+    body.password = pw;
+  }
+  try {
+    await api('PATCH', '/profile', body);
+    // Update currentUser in-memory + sidebar-avatar
+    if (body.name) {
+      currentUser.name = body.name;
+      const inits = body.name.split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
+      currentUser.initials = inits;
+      document.getElementById('sb-name').textContent = body.name;
+      const av = document.getElementById('sb-av'); if (av) av.textContent = inits;
+    }
+    if (body.color) {
+      currentUser.color = body.color;
+      const av = document.getElementById('sb-av'); if (av) av.style.background = body.color;
+    }
+    document.getElementById('set-profile-pw').value = '';
+    toast('Profiel opgeslagen ✓');
+  } catch(e) { toast('Fout: '+e.message); }
+}
+
+async function saveLocation(){
+  const body = {
+    kdv_name: document.getElementById('set-kdv-name').value.trim(),
+    opening_time: document.getElementById('set-open').value,
+    closing_time: document.getElementById('set-close').value,
+  };
+  try {
+    await api('PATCH', '/settings', body);
+    toast('Locatie-instellingen opgeslagen ✓');
+  } catch(e) { toast('Fout: '+e.message); }
+}
+
+async function persistNotif(key, checked){
+  try { await api('PATCH', '/settings', {[key]: checked ? '1' : '0'}); }
+  catch(e) { toast('Fout opslaan: '+e.message); }
+}
+
+async function exportSelfData(){
+  try {
+    const me = await api('GET', '/auth/me');
+    const blob = new Blob([JSON.stringify(me, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `kinderkompas_profile_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Profielgegevens geëxporteerd ✓');
+  } catch(e) { toast('Fout: '+e.message); }
 }
 
 document.addEventListener('click', e => {
