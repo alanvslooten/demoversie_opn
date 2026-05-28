@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 
 app = Flask(__name__, static_url_path='')
 SECRET   = os.environ.get('JWT_SECRET', 'kk-v2-secret-2026-zX7nQ')
-DB_PATH  = os.path.join(os.path.dirname(__file__), 'kinderkompas.db')
+DB_PATH  = os.path.join(os.path.dirname(__file__), 'kinderkompas_v4.db')
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
