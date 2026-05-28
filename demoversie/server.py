@@ -991,6 +991,14 @@ def bkr_calculate():
 
 init_db()
 
+@app.route('/reset-nu')
+def reset_nu():
+    import os
+    db = os.path.join(os.path.dirname(__file__), 'kinderkompas_v4.db')
+    if os.path.exists(db): os.remove(db)
+    init_db()
+    return '<h2>✅ Database gereset!</h2><p>Ga terug naar de app en log in.</p><a href="/">Terug naar app</a>'
+
 if __name__ == '__main__':
     port=int(os.environ.get('PORT',5000))
     print(f'🚀 KinderKompas v2 → http://localhost:{port}')
