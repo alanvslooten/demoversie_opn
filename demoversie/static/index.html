@@ -1213,6 +1213,8 @@ html{font-size:clamp(13px,1.1vw,15px)}
 // CONFIG & GLOBALS
 // ══════════════════════════════
 const API = window.location.origin + '/api';
+// Debug: log API URL op load
+console.log('[KK] API base:', API);
 let token = localStorage.getItem('kk_token');
 let currentUser = null;
 let staffList = [];
@@ -1283,6 +1285,16 @@ function goPhoto(i) {
 // ══════════════════════════════
 // AUTH
 // ══════════════════════════════
+// Verbindingstest op startup
+async function testConnection() {
+  try {
+    const r = await fetch(API + '/auth/me', {headers:{'Authorization':'Bearer invalid'}});
+    return r.status === 401; // 401 = server bereikbaar maar token ongeldig = OK
+  } catch(e) {
+    return false;
+  }
+}
+
 async function doLogin() {
   const email = document.getElementById('li-email').value.trim();
   const pass  = document.getElementById('li-pass').value;
@@ -1499,7 +1511,13 @@ async function loadDashboard() {
     const notifDot = document.getElementById('notif-dot');
     if (notifDot) notifDot.style.display = (obsCount || d.pending_leave || d.wl_proposals) ? 'block' : 'none';
 
-  } catch (e) { console.error('Dashboard error:', e); }
+  } catch (e) {
+    ['dash-stats','dash-wl','dash-obs','dash-activity'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<div class="empty" style="padding:16px"><i class="ti ti-wifi-off"></i><p style="font-size:11px">Laden mislukt</p></div>';
+    });
+    toast(e.message||'Server niet bereikbaar', 'error', 'Dashboard');
+  }
 }
 
 // ══════════════════════════════
@@ -1574,8 +1592,15 @@ function setPlanFilter(g, btn) { planFilter=g; document.querySelectorAll('#view-
 // OBSERVATIONS
 // ══════════════════════════════
 async function loadObservations() {
-  try { const d = await api('GET','/observations/overview'); if(!d) return; allObs=d; renderObs(); }
-  catch(e) { console.error(e); }
+  const el=document.getElementById('obs-card-container');
+  if(el) el.innerHTML=skelCards(4);
+  try {
+    const d = await api('GET','/observations/overview');
+    if(!d) return; allObs=d; renderObs();
+  } catch(e) {
+    if(el) el.innerHTML='<div class="empty"><i class="ti ti-wifi-off"></i><h3>Observaties konden niet laden</h3><button class="btn btn-outline btn-sm" onclick="loadObservations()"><i class="ti ti-refresh"></i>Opnieuw</button></div>';
+    toast(e.message||'Fout bij laden observaties', 'error');
+  }
 }
 function renderObs() {
   const container = document.getElementById('obs-card-container');
@@ -1745,7 +1770,11 @@ async function loadMedewerkers() {
           + (kids.length>3?`<div style="font-size:9px;color:var(--text3);text-align:center;padding-top:3px">+${kids.length-3} meer</div>`:'');
       } catch(e){}
     });
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    const el=document.getElementById('staff-tiles');
+    if(el) el.innerHTML='<div class="empty"><i class="ti ti-wifi-off"></i><h3>Medewerkers konden niet laden</h3><button class="btn btn-outline btn-sm" onclick="loadMedewerkers()"><i class="ti ti-refresh"></i>Opnieuw</button></div>';
+    toast(e.message||'Medewerkers konden niet laden', 'error');
+  }
 }
 
 async function openStaffDetail(id, photo) {
@@ -1816,7 +1845,11 @@ async function loadRooster() {
       });
       html+='</div></div>'; container.innerHTML=html;
     }
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    const el=document.getElementById('sched-container');
+    if(el) el.innerHTML='<div class="empty"><i class="ti ti-wifi-off"></i><h3>Rooster kon niet laden</h3><button class="btn btn-outline btn-sm" onclick="loadRooster()"><i class="ti ti-refresh"></i>Opnieuw</button></div>';
+    toast(e.message||'Rooster kon niet laden', 'error');
+  }
 }
 async function loadUren() {
   const el=document.getElementById('uren-content'); if(!el) return;
@@ -1983,7 +2016,9 @@ async function loadContacten(){
         </div>`;
       }).join('')||'<div class="empty" style="padding:16px"><i class="ti ti-calendar-off"></i><h3>Geen rondleidingen</h3></div>';
     }
-  }catch(e){console.error(e);}
+  }catch(e){
+    toast(e.message||'Contacten konden niet laden', 'error');
+  }
 }
 async function updateTourStatus(id,status){try{await api('PATCH',`/tours/${id}`,{status});toast('Status bijgewerkt', 'success');loadContacten();}catch(e){toast('Fout');}}
 
